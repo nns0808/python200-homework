@@ -328,7 +328,7 @@ def summary_report(df):
     for region, val in bottom_3.items():
         logger.info(f"{region}: {val:.3f}")
 
-    # 3. T-test interpretation (you already computed it, so recompute quickly or reuse logic)
+    # 3. T-test interpretation 
     df_2019 = df[df["year"] == 2019]["happiness_score"].dropna()
     df_2020 = df[df["year"] == 2020]["happiness_score"].dropna()
 
@@ -342,7 +342,7 @@ def summary_report(df):
 
     logger.info(f"T-test result (2019 vs 2020): {ttest_result}")
 
-    # 4. Most strongly correlated variable (after Bonferroni)
+    # 4. Most strongly correlated variable 
     numeric_cols = df.select_dtypes(include=np.number).columns
     target = "happiness_score"
 
