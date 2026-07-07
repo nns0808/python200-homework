@@ -48,14 +48,19 @@ def load_file(path):
 
 #  Combine data
 @task
-def combine_data(dfs):
+def combine_data(dataframes):
     logger = get_run_logger()
 
-    combined = pd.concat(dfs, ignore_index=True)
+    merged_df = pd.concat(dataframes, ignore_index=True)
 
-    logger.info(f"Combined {len(dfs)} files")
+    merged_df.to_csv(
+        "assignments_01/outputs/merged_happiness.csv",
+        index=False
+    )
 
-    return combined
+    logger.info("Saved merged dataset to assignments_01/outputs/merged_happiness.csv")
+
+    return merged_df
 
 
 # TASK 2: Descriptive Statistics
@@ -308,7 +313,7 @@ def summary_report(df):
     logger.info("===== SUMMARY REPORT =====")
 
     # 1. Dataset size
-    n_countries = df["country_name"].nunique() if "country_name" in df.columns else "Unknown"
+    n_countries = df["country"].nunique()
     n_years = df["year"].nunique()
 
     logger.info(f"Total countries: {n_countries}")
