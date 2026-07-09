@@ -8,6 +8,9 @@ from scipy.stats import pearsonr
 
 # File paths
 years = list(range(2015, 2025))
+
+from pathlib import Path
+
 BASE_PATH = "../python-200/assignments/resources/happiness_project"
 file_paths = [
     f"{BASE_PATH}/world_happiness_{year}.csv"
@@ -304,6 +307,7 @@ def correlation_analysis(df):
     return df
 
 # Task 6: Summary Report
+
 @task
 def summary_report(df):
     logger = get_run_logger()
@@ -320,7 +324,11 @@ def summary_report(df):
     logger.info(f"Total years: {n_years}")
 
     # 2. Top/bottom regions
-    region_means = df.groupby("regional_indicator")["happiness_score"].mean().sort_values()
+    region_means = (
+        df.groupby("regional_indicator")["happiness_score"]
+        .mean()
+        .sort_values()
+    )
 
     top_3 = region_means.tail(3)
     bottom_3 = region_means.head(3)
@@ -333,21 +341,34 @@ def summary_report(df):
     for region, val in bottom_3.items():
         logger.info(f"{region}: {val:.3f}")
 
-    # 3. T-test interpretation 
+    # 3. T-test interpretation
     df_2019 = df[df["year"] == 2019]["happiness_score"].dropna()
     df_2020 = df[df["year"] == 2020]["happiness_score"].dropna()
 
     from scipy.stats import ttest_ind
-    t_stat, p_val = ttest_ind(df_2019, df_2020, equal_var=False)
+
+    t_stat, p_val = ttest_ind(
+        df_2019,
+        df_2020,
+        equal_var=False
+    )
 
     if p_val < 0.05:
-        ttest_result = "There WAS a statistically significant difference between 2019 and 2020 happiness scores."
+        ttest_result = (
+            "There WAS a statistically significant difference "
+            "between 2019 and 2020 happiness scores."
+        )
     else:
-        ttest_result = "There was NO statistically significant difference between 2019 and 2020 happiness scores."
+        ttest_result = (
+            "There was NO statistically significant difference "
+            "between 2019 and 2020 happiness scores."
+        )
 
-    logger.info(f"T-test result (2019 vs 2020): {ttest_result}")
+    logger.info(
+        f"T-test result (2019 vs 2020): {ttest_result}"
+    )
 
-    # 4. Most strongly correlated variable 
+    # 4. Most strongly correlated variable
     numeric_cols = df.select_dtypes(include=np.number).columns
     target = "happiness_score"
 
@@ -363,25 +384,83 @@ def summary_report(df):
             continue
 
         r, p = pearsonr(temp[col], temp[target])
+
         corr_results.append((col, r, p))
 
-    corr_df = pd.DataFrame(corr_results, columns=["variable", "r", "p"])
+    corr_df = pd.DataFrame(
+        corr_results,
+        columns=["variable", "r", "p"]
+    )
+
+    best = None
+    sig = pd.DataFrame()
 
     if len(corr_df) > 0:
-        corr_df["bonferroni"] = corr_df["p"] < (0.05 / len(corr_df))
+
+        corr_df["bonferroni"] = (
+            corr_df["p"] < (0.05 / len(corr_df))
+        )
 
         sig = corr_df[corr_df["bonferroni"]]
 
         if len(sig) > 0:
-            best = sig.loc[sig["r"].abs().idxmax()]
+            best = sig.loc[
+                sig["r"].abs().idxmax()
+            ]
+
             logger.info(
-                f"Strongest correlation after Bonferroni: {best['variable']} (r={best['r']:.3f})"
+                f"Strongest correlation after Bonferroni: "
+                f"{best['variable']} "
+                f"(r={best['r']:.3f})"
             )
+
         else:
-            logger.info("No variables remained significant after Bonferroni correction.")
+            logger.info(
+                "No variables remained significant "
+                "after Bonferroni correction."
+            )
 
-            return df
 
+    # FINAL SUMMARY SECTION
+    logger.info("===== FINAL SUMMARY =====")
+
+    logger.info(
+        f"The dataset contains {n_countries} countries "
+        f"across {n_years} years."
+    )
+
+    logger.info("Highest happiness regions:")
+    for region, val in top_3.items():
+        logger.info(
+            f"{region}: {val:.3f}"
+        )
+
+    logger.info("Lowest happiness regions:")
+    for region, val in bottom_3.items():
+        logger.info(
+            f"{region}: {val:.3f}"
+        )
+
+    logger.info(
+        f"Pre/post-2020 t-test conclusion: {ttest_result}"
+    )
+
+    if best is not None:
+        logger.info(
+            f"The variable most strongly correlated with "
+            f"happiness after Bonferroni correction was "
+            f"{best['variable']} "
+            f"(r={best['r']:.3f})."
+        )
+    else:
+        logger.info(
+            "No variable showed a significant correlation "
+            "with happiness after Bonferroni correction."
+        )
+
+
+   
+    return df
 
 @flow
 def happiness_pipeline():
