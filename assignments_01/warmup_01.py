@@ -227,10 +227,10 @@ fig, ax = plt.subplots(1, 2, figsize=(10, 4))
 # Left subplot: line plot
 ax[0].plot(x, y)
 ax[0].set_title("Squares")
-
 # Right subplot: bar plot
 ax[1].bar(subjects, scores)
-ax[1].set_title("Subject Scores")
+# Right subplot set title
+fig.axes[1].set_title("Subject Scores")
 
 plt.tight_layout()
 plt.show()
@@ -301,6 +301,12 @@ plt.ylabel("Values")
 # Display the plot
 plt.show()
 
+# The exponential distribution is more positively skewed than the normal distribution.
+# The normal distribution is approximately symmetric, so the mean is an appropriate
+# measure of central tendency. The exponential distribution has a long right tail,
+# so the median is a better measure of central tendency because it is less affected
+# by skewness and extreme values.
+
 # Stats Question 5
 
 import statistics
@@ -319,6 +325,10 @@ print("\nData 2")
 print("Mean:", np.mean(data2))
 print("Median:", np.median(data2))
 print("Mode:", statistics.mode(data2))
+
+# The mean and median are very different for data2 because the value 150 is an
+# extreme outlier. The outlier pulls the mean upward, while the median remains
+# the middle value of the ordered dataset and is much less affected by extreme values.
 
 # --- Hypothesis Testing ---
 
@@ -345,18 +355,22 @@ alpha = 0.05
 if p_value < alpha:
     if t_statistic < 0:
         conclusion = (
-            "Group A scored significantly lower than Group B. "
-            "This difference is unlikely to be due to random chance."
+            "Based on the Q1 t-test result, Group A had a significantly lower "
+            "average score than Group B. This difference is unlikely to be due "
+            "to random chance."
         )
     else:
         conclusion = (
-            "Group A scored significantly higher than Group B. "
-            "This difference is unlikely to be due to random chance."
+            "Based on the Q1 t-test result, Group A had a significantly higher "
+            "average score than Group B. This difference is unlikely to be due "
+            "to random chance."
         )
+        
 else:
     conclusion = (
-        "There is no strong evidence of a meaningful difference between Group A and Group B. "
-        "The observed difference could be due to random chance."
+        "Based on the Q1 t-test, there is no statistically significant "
+        "difference between Group A and Group B. The observed difference could "
+        "be explained by random chance."
     )
 
 print("\nHypothesis Question 6")
