@@ -11,9 +11,11 @@ from sklearn.linear_model import LinearRegression
 # so pd.read_csv() requires sep=";".
 
 # Load the dataset
+
 df = pd.read_csv("assignments_02/student_performance_math.csv", sep=";")
 os.makedirs("assignments_02/outputs", exist_ok=True)
 print(df.columns.tolist())
+
 # Print basic information
 print("Shape:", df.shape)
 
@@ -33,17 +35,6 @@ plt.ylabel("Number of Students")
 
 plt.savefig("assignments_02/outputs/g3_distribution.png")
 plt.close()
-
-# Task 2
-# Print original shape
-print("\nOriginal shape:", df.shape)
-
-# Remove students with G3 = 0
-# Reason: A grade of 0 usually indicates the student did not take the final exam.
-# These are not true measures of academic performance and would bias the model.
-# Students with G3 = 0 generally did not take the final exam.
-# Their zero grades are not caused by poor academic performance,
-# so including them would distort the regression model.
 
 df_filtered = df[df["G3"] > 0].copy()
 
@@ -78,48 +69,84 @@ print("\nCorrelation between absences and G3")
 print(f"Original dataset : {corr_original:.3f}")
 print(f"Filtered dataset : {corr_filtered:.3f}")
 
-# Task 3
+# ==========================
+# Task 3: Exploratory Data Analysis
+# ==========================
 
-# Compute correlations between numeric features and G3
-correlations = df_filtered.corr(numeric_only=True)["G3"].sort_values()
+# Compute Pearson correlations between all numeric features and G3
+# using the filtered dataset.
 
-print("\nCorrelations with G3:")
+correlations = (
+    df_filtered
+    .corr(numeric_only=True)["G3"]
+    .sort_values()
+)
+
+print("\nPearson correlations with G3:")
 print(correlations)
 
-print("\nStrongest positive correlation:")
+print("\nMost positive correlation:")
 print(correlations.tail(1))
 
-print("\nStrongest negative correlation:")
+print("\nMost negative correlation:")
 print(correlations.head(1))
 
-# Visualization 1: Study Time vs Final Grade
+
+# Visualization 1:
+# Study time vs final grade
+
 plt.figure(figsize=(6, 4))
-plt.scatter(df_filtered["studytime"], df_filtered["G3"], alpha=0.6)
+
+plt.scatter(
+    df_filtered["studytime"],
+    df_filtered["G3"],
+    alpha=0.6
+)
 
 plt.title("Study Time vs Final Grade")
 plt.xlabel("Study Time")
 plt.ylabel("Final Grade (G3)")
 
-plt.savefig("assignments_02/outputs/studytime_vs_g3.png")
+plt.savefig(
+    "assignments_02/outputs/studytime_vs_g3.png"
+)
+
 plt.close()
 
-# Students who study more tend to earn slightly higher grades,
-# although there is considerable variation among individuals.
 
-# Visualization 2: Absences vs Final Grade
+# Comment:
+# This scatter plot shows the relationship between study time
+# and final grades. Students with higher study time tend to have
+# slightly higher G3 scores, although there is substantial
+# variation between students.
+
+
+# Visualization 2:
+# Absences vs final grade
 
 plt.figure(figsize=(6, 4))
-plt.scatter(df_filtered["absences"], df_filtered["G3"], alpha=0.6)
+
+plt.scatter(
+    df_filtered["absences"],
+    df_filtered["G3"],
+    alpha=0.6
+)
 
 plt.title("Absences vs Final Grade")
-plt.xlabel("Absences")
+plt.xlabel("Number of Absences")
 plt.ylabel("Final Grade (G3)")
 
-plt.savefig("assignments_02/outputs/absences_vs_g3.png")
+plt.savefig(
+    "assignments_02/outputs/absences_vs_g3.png"
+)
+
 plt.close()
 
-# Students with more absences generally tend to receive lower grades,
-# although the relationship is moderate rather than perfect.
+
+# Comment:
+# This scatter plot shows that higher absences generally correspond
+# to lower final grades. The relationship is not perfect because
+# student performance is influenced by many other factors.
 
 # Task 4
 # Feature (X) and target (y)
@@ -240,7 +267,7 @@ plt.plot(
     [y_test.min(), y_test.max()]
 )
 
-plt.title("Predicted vs Actual (Full Model)")
+plt.title("Predicted vs Actual")
 plt.xlabel("Predicted Grade (G3)")
 plt.ylabel("Actual Grade (G3)")
 
@@ -260,30 +287,36 @@ plt.close()
 # fewer students have very high or very low scores.
 
 
-# Summary:
-#
-# The filtered dataset contains 357 students after removing students with
-# G3 = 0. With an 80/20 train-test split, the test set contains about
-# 72 students.
-#
-# The full model achieved an RMSE of approximately 2.86 grade points and
-# a test R² of approximately 0.15. Since grades are measured on a 0-20
-# scale, the model's predictions are typically off by about 3 points.
-# The R² means that the model explains about 15% of the variation in
-# final grades, so many other factors influence student performance.
-#
-# The largest positive coefficient was internet (+0.834), meaning that
-# after accounting for the other features, students with internet access
-# were predicted to have slightly higher grades.
-#
-# The largest negative coefficient was schoolsup (-2.062), meaning students
-# receiving school support had lower predicted grades. This was surprising,
-# but it may be because students who need additional support are already
-# struggling academically, so the variable may indicate higher risk rather
-# than causing lower grades.
+# ==========================
+# Summary
+# ==========================
 
-# Neglected Feature: The Power of G1
-# Add G1 to the full model
+# The filtered dataset contains 357 students after removing students
+# with G3 = 0. Using an 80/20 train-test split, the test set contains
+# approximately 72 students.
+
+# The full regression model achieved an RMSE of approximately 2.86.
+# This means that the model's predictions are typically within about
+# 3 grade points of the actual final grade.
+
+# The model achieved a test R² of approximately 0.15.
+# This means that the model explains about 15% of the variation in
+# final grades. Many other factors influence student performance,
+# so additional information would be needed for stronger predictions.
+
+# The largest positive coefficient was internet access (+0.834),
+# suggesting that students with internet access were predicted to have
+# slightly higher grades when controlling for other features.
+
+# The largest negative coefficient was school support (-2.062).
+# A surprising result was that students receiving school support had
+# lower predicted grades. This does not mean school support lowers grades.
+# Instead, students receiving support may already be struggling and
+# therefore represent a higher-risk group.
+
+# Overall, the model captures some relationships between student
+# characteristics and academic performance but has limited predictive
+# power because grades depend on many additional factors.
 
 feature_cols_g1 = [
     "failures", "Medu", "Fedu", "studytime", "higher",
@@ -316,16 +349,17 @@ test_r2_g1 = model_g1.score(X_test_g1, y_test_g1)
 print("Test R² with G1:", test_r2_g1)
 
 # Adding G1 greatly improves the model's R² because first-period grades
-# are already very similar to final grades. However, a high R² does not
-# mean that G1 causes G3. It only means that G1 is strongly associated
-# with the final grade.
+# are strongly related to final grades. However, a high R² does not mean
+# that G1 causes G3. It only means that students' first-period grades
+# are a strong predictor of their final grades. Other factors, such as
+# motivation, attendance, study habits, and prior knowledge, also affect
+# final performance.
 #
-# This model is useful for predicting final performance after the first
-# grading period, but it is less useful for early intervention because
-# educators want to identify struggling students before G1 is available.
+# This model is useful for predicting final grades once G1 is available,
+# but it is less useful for early intervention because educators need to
+# identify struggling students before the first-period grade exists.
 #
-# To intervene earlier, educators would need to use earlier indicators
-# such as attendance, previous failures, study habits, family support,
-# engagement, and other factors available before the first-period grade.
-# The goal would be to identify risk factors early and provide support
-# before students fall behind.
+# Before G1 is available, educators would need to rely on earlier indicators
+# such as absences, previous failures, study time, family support, school
+# engagement, and other student characteristics. These factors could help
+# identify students who may need support before they fall behind.
