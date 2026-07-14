@@ -1,9 +1,19 @@
-import os
+from pathlib import Path
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
+
+# ==========================
+# Paths
+# ==========================
+
+BASE_DIR = Path(__file__).parent
+DATA_FILE = BASE_DIR / "student_performance_math.csv"
+OUTPUT_DIR = BASE_DIR / "outputs"
+OUTPUT_DIR.mkdir(exist_ok=True)
 
 # Task 1
 
@@ -12,8 +22,7 @@ from sklearn.linear_model import LinearRegression
 
 # Load the dataset
 
-df = pd.read_csv("assignments_02/student_performance_math.csv", sep=";")
-os.makedirs("assignments_02/outputs", exist_ok=True)
+df = pd.read_csv(DATA_FILE, sep=";")
 print(df.columns.tolist())
 
 # Print basic information
@@ -25,7 +34,9 @@ print(df.head())
 print("\nData types:")
 print(df.dtypes)
 
+# Task 2: Preprocess the Data
 # Plot histogram of final grades (G3)
+
 plt.figure(figsize=(8, 5))
 plt.hist(df["G3"], bins=21, edgecolor="black")
 
@@ -33,7 +44,7 @@ plt.title("Distribution of Final Math Grades")
 plt.xlabel("Final Grade (G3)")
 plt.ylabel("Number of Students")
 
-plt.savefig("assignments_02/outputs/g3_distribution.png")
+plt.savefig(OUTPUT_DIR / "g3_distribution.png")
 plt.close()
 
 df_filtered = df[df["G3"] > 0].copy()
@@ -56,11 +67,15 @@ for col in yes_no_columns:
 df_filtered["sex"] = df_filtered["sex"].map({"F": 0, "M": 1})
 
 
-# Removing G3 = 0 students changes the correlation because many of these
-# students had high numbers of absences and received a zero simply because
-# they missed the final exam. After filtering them out, the remaining data
-# better reflects the relationship between attendance and academic performance.
-# Compute Pearson correlation between absences and G3
+# Removing students with G3 = 0 changes the correlation because many of
+# these students did not actually complete the final exam. Their grade of
+# zero reflects missing the exam rather than their true academic performance.
+# Including these students mixes together exam non-participation and academic
+# achievement, making the relationship between absences and final grade appear
+# weaker than it really is. After filtering out the G3 = 0 rows, the remaining
+# data better represents students who completed the course, so the correlation
+# more accurately reflects how increased absences are associated with lower
+# final grades.
 
 corr_original = df["absences"].corr(df["G3"])
 corr_filtered = df_filtered["absences"].corr(df_filtered["G3"])
@@ -69,9 +84,8 @@ print("\nCorrelation between absences and G3")
 print(f"Original dataset : {corr_original:.3f}")
 print(f"Filtered dataset : {corr_filtered:.3f}")
 
-# ==========================
+
 # Task 3: Exploratory Data Analysis
-# ==========================
 
 # Compute Pearson correlations between all numeric features and G3
 # using the filtered dataset.
@@ -107,9 +121,7 @@ plt.title("Study Time vs Final Grade")
 plt.xlabel("Study Time")
 plt.ylabel("Final Grade (G3)")
 
-plt.savefig(
-    "assignments_02/outputs/studytime_vs_g3.png"
-)
+plt.savefig(OUTPUT_DIR / "studytime_vs_g3.png")
 
 plt.close()
 
@@ -136,9 +148,7 @@ plt.title("Absences vs Final Grade")
 plt.xlabel("Number of Absences")
 plt.ylabel("Final Grade (G3)")
 
-plt.savefig(
-    "assignments_02/outputs/absences_vs_g3.png"
-)
+plt.savefig(OUTPUT_DIR / "absences_vs_g3.png")
 
 plt.close()
 
@@ -271,7 +281,7 @@ plt.title("Predicted vs Actual")
 plt.xlabel("Predicted Grade (G3)")
 plt.ylabel("Actual Grade (G3)")
 
-plt.savefig("assignments_02/outputs/predicted_vs_actual.png")
+plt.savefig(OUTPUT_DIR / "predicted_vs_actual.png")
 plt.close()
 
 
@@ -291,32 +301,33 @@ plt.close()
 # Summary
 # ==========================
 
-# The filtered dataset contains 357 students after removing students
-# with G3 = 0. Using an 80/20 train-test split, the test set contains
-# approximately 72 students.
+# The filtered dataset contains 357 students after removing the
+# students with G3 = 0. Using an 80/20 train-test split resulted
+# in a test set containing 72 students.
 
-# The full regression model achieved an RMSE of approximately 2.86.
-# This means that the model's predictions are typically within about
-# 3 grade points of the actual final grade.
+# The full regression model achieved an RMSE of approximately 2.86,
+# meaning that the predictions are typically within about 3 grade
+# points of the actual final grade.
 
-# The model achieved a test R² of approximately 0.15.
-# This means that the model explains about 15% of the variation in
-# final grades. Many other factors influence student performance,
-# so additional information would be needed for stronger predictions.
+# The model achieved a test R² of approximately 0.15, so it explains
+# about 15% of the variation in students' final grades. This indicates
+# that many additional factors beyond the selected features influence
+# academic performance.
 
-# The largest positive coefficient was internet access (+0.834),
-# suggesting that students with internet access were predicted to have
-# slightly higher grades when controlling for other features.
+# In the full model, internet had the largest positive coefficient
+# (+0.834), meaning students with internet access were predicted to
+# have slightly higher grades after accounting for the other features.
 
-# The largest negative coefficient was school support (-2.062).
-# A surprising result was that students receiving school support had
-# lower predicted grades. This does not mean school support lowers grades.
-# Instead, students receiving support may already be struggling and
-# therefore represent a higher-risk group.
+# School support (schoolsup) had the largest negative coefficient
+# (-2.062). This does not mean school support lowers grades. Rather,
+# students receiving school support are more likely to already be
+# struggling academically, so school support is acting as an indicator
+# of students who need additional help rather than causing lower grades.
 
-# Overall, the model captures some relationships between student
-# characteristics and academic performance but has limited predictive
-# power because grades depend on many additional factors.
+# Overall, the model captures some meaningful relationships between
+# student characteristics and final grades, but its predictive power
+# is limited because many important influences on academic performance
+# are not included in the model.
 
 feature_cols_g1 = [
     "failures", "Medu", "Fedu", "studytime", "higher",
@@ -349,17 +360,20 @@ test_r2_g1 = model_g1.score(X_test_g1, y_test_g1)
 print("Test R² with G1:", test_r2_g1)
 
 # Adding G1 greatly improves the model's R² because first-period grades
-# are strongly related to final grades. However, a high R² does not mean
-# that G1 causes G3. It only means that students' first-period grades
-# are a strong predictor of their final grades. Other factors, such as
-# motivation, attendance, study habits, and prior knowledge, also affect
-# final performance.
-#
-# This model is useful for predicting final grades once G1 is available,
-# but it is less useful for early intervention because educators need to
-# identify struggling students before the first-period grade exists.
-#
-# Before G1 is available, educators would need to rely on earlier indicators
-# such as absences, previous failures, study time, family support, school
-# engagement, and other student characteristics. These factors could help
-# identify students who may need support before they fall behind.
+# are strongly associated with final grades. However, a high R² does not
+# mean that G1 causes G3. It only means that G1 is a strong predictor of
+# G3. The model identifies a correlation between first-period performance
+# and final grades, but it does not prove that improving G1 alone will
+# directly cause higher G3 scores.
+
+# G1 is useful for prediction because it summarizes many factors that
+# already influence student performance, such as prior knowledge,
+# motivation, study habits, attendance, and engagement. However, using
+# G1 for early intervention is limited because educators only observe
+# this information after the first grading period.
+
+# Before G1 is available, educators would need to rely on earlier warning
+# indicators such as previous failures, absences, study time, participation,
+# family support, and student engagement. These factors could help identify
+# students who may be at risk and allow schools to provide support before
+# academic difficulties become reflected in their first-period grades.

@@ -2,7 +2,17 @@
 # Q1
 
 import numpy as np
+import matplotlib.pyplot as plt
+from pathlib import Path
+
+from sklearn.cluster import KMeans
+from sklearn.datasets import make_blobs
 from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split
+
+BASE_DIR = Path(__file__).parent
+OUTPUT_DIR = BASE_DIR / "outputs"
+OUTPUT_DIR.mkdir(exist_ok=True)
 
 years  = np.array([1, 2, 3, 5, 7, 10]).reshape(-1, 1)
 salary = np.array([45000, 50000, 60000, 75000, 90000, 120000])
@@ -71,12 +81,6 @@ print(kmeans.cluster_centers_)
 print("\nPoints in each cluster:")
 print(np.bincount(labels))
 
-# Create the output directory if it doesn't exist
-os.makedirs("outputs", exist_ok=True)
-
-# Create the output directory if it doesn't exist
-os.makedirs("outputs", exist_ok=True)
-
 # Create the scatter plot
 plt.figure(figsize=(8, 6))
 
@@ -100,7 +104,7 @@ plt.ylabel("Feature 2")
 plt.legend()
 
 # Save the figure
-plt.savefig("outputs/kmeans_clusters.png")
+plt.savefig(OUTPUT_DIR / "kmeans_clusters.png")
 
 # Display the plot
 plt.show()
@@ -110,7 +114,7 @@ plt.close()
 
 # --- Linear Regression ---
 
-import os
+
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression
@@ -140,7 +144,7 @@ plt.xlabel("Age")
 plt.ylabel("Annual Medical Cost")
 
 # Save figure
-plt.savefig("outputs/cost_vs_age.png")
+plt.savefig(OUTPUT_DIR / "cost_vs_age.png")
 
 # Display plot
 plt.show()
@@ -253,7 +257,7 @@ plt.xlabel("Predicted Medical Cost")
 plt.ylabel("Actual Medical Cost")
 
 # Save figure
-plt.savefig("outputs/predicted_vs_actual.png")
+plt.savefig(OUTPUT_DIR / "predicted_vs_actual.png")
 
 # Display plot
 plt.show()
