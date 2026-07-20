@@ -1,0 +1,561 @@
+# Task1
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+
+column_names = [
+    "word_freq_make",
+    "word_freq_address",
+    "word_freq_all",
+    "word_freq_3d",
+    "word_freq_our",
+    "word_freq_over",
+    "word_freq_remove",
+    "word_freq_internet",
+    "word_freq_order",
+    "word_freq_mail",
+    "word_freq_receive",
+    "word_freq_will",
+    "word_freq_people",
+    "word_freq_report",
+    "word_freq_addresses",
+    "word_freq_free",
+    "word_freq_business",
+    "word_freq_email",
+    "word_freq_you",
+    "word_freq_credit",
+    "word_freq_your",
+    "word_freq_font",
+    "word_freq_000",
+    "word_freq_money",
+    "word_freq_hp",
+    "word_freq_hpl",
+    "word_freq_george",
+    "word_freq_650",
+    "word_freq_lab",
+    "word_freq_labs",
+    "word_freq_telnet",
+    "word_freq_857",
+    "word_freq_data",
+    "word_freq_415",
+    "word_freq_85",
+    "word_freq_technology",
+    "word_freq_1999",
+    "word_freq_parts",
+    "word_freq_pm",
+    "word_freq_direct",
+    "word_freq_cs",
+    "word_freq_meeting",
+    "word_freq_original",
+    "word_freq_project",
+    "word_freq_re",
+    "word_freq_edu",
+    "word_freq_table",
+    "word_freq_conference",
+    "char_freq_;",
+    "char_freq_(",
+    "char_freq_[",
+    "char_freq_!",
+    "char_freq_$",
+    "char_freq_#",
+    "capital_run_length_average",
+    "capital_run_length_longest",
+    "capital_run_length_total",
+    "spam_label"
+]
+
+df = pd.read_csv(
+    "assignments_03/spambase/spambase.data",
+    header=None,
+    names=column_names
+)
+
+print(df.head())
+print(df.shape)
+
+print(df["spam_label"].value_counts())
+print(df["spam_label"].value_counts(normalize=True))
+
+# The dataset is somewhat imbalanced, with more ham emails than spam emails.
+# Accuracy alone may be misleading because a model could achieve about 60%
+# accuracy by predicting every email as ham.
+
+features = [
+    "word_freq_free",
+    "char_freq_!",
+    "capital_run_length_total"
+]
+
+for feature in features:
+    ham = df[df["spam_label"] == 0][feature]
+    spam = df[df["spam_label"] == 1][feature]
+
+    plt.figure(figsize=(6, 4))
+
+    plt.boxplot(
+        [ham, spam],
+        tick_labels=["Ham", "Spam"]
+    )
+
+    plt.title(f"{feature}: Ham vs Spam")
+    plt.ylabel(feature)
+
+    plt.tight_layout()
+
+    plt.savefig(f"outputs/{feature}_boxplot.png")
+
+    plt.show()
+
+
+# The boxplots show that spam emails generally have higher values for
+# word_freq_free, char_freq_!, and capital_run_length_total compared with
+# ham emails. The differences are noticeable but not complete separation,
+# because there is still overlap between the two classes.
+
+# Task2
+# Separate features and target
+X = df.drop("spam_label", axis=1)
+y = df["spam_label"]
+
+from sklearn.model_selection import train_test_split
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X,
+    y,
+    test_size=0.2,
+    random_state=42,
+    stratify=y
+)
+
+print(X_train.shape)
+print(X_test.shape)
+print(y_train.shape)
+print(y_test.shape)
+
+# stratify=y keeps the same spam/ham ratio in both training and test sets.
+# This prevents one split from having too many spam or ham emails.
+
+from sklearn.decomposition import PCA
+
+from sklearn.preprocessing import StandardScaler
+scaler = StandardScaler()
+
+# Fit only on training data to prevent test data information leakage
+X_train_scaled = scaler.fit_transform(X_train)
+
+# Use the same scaler to transform test data
+X_test_scaled = scaler.transform(X_test)
+
+# The scaler is fitted only on X_train because using X_test during fitting
+# would allow information from the test set to influence preprocessing.
+
+pca = PCA()
+
+# PCA is fitted only on training data to avoid test-set leakage
+pca.fit(X_train_scaled)
+
+cumulative_variance = np.cumsum(
+    pca.explained_variance_ratio_
+)
+
+plt.figure(figsize=(8, 5))
+
+plt.plot(
+    range(1, len(cumulative_variance) + 1),
+    cumulative_variance
+)
+
+plt.xlabel("Number of Components")
+plt.ylabel("Cumulative Explained Variance")
+plt.title("PCA Explained Variance")
+
+plt.axhline(
+    y=0.90,
+    linestyle="--"
+)
+
+plt.savefig("outputs/pca_variance_explained.png")
+
+plt.close()
+
+n = np.argmax(cumulative_variance >= 0.90) + 1
+
+print("Number of components explaining 90% variance:", n)
+
+X_train_pca = pca.transform(X_train_scaled)[:, :n]
+
+X_test_pca = pca.transform(X_test_scaled)[:, :n]
+
+print("Original features:", X_train.shape[1])
+print("PCA features:", X_train_pca.shape[1])
+
+# Task3
+
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import cross_val_score
+
+
+from sklearn.metrics import (
+    accuracy_score,
+    classification_report,
+    confusion_matrix,
+    ConfusionMatrixDisplay
+)
+knn_unscaled = KNeighborsClassifier(n_neighbors=5)
+
+knn_unscaled.fit(X_train, y_train)
+
+y_pred_knn_unscaled = knn_unscaled.predict(X_test)
+
+print("KNN Unscaled Accuracy:")
+print(accuracy_score(y_test, y_pred_knn_unscaled))
+
+print(classification_report(y_test, y_pred_knn_unscaled))
+
+knn_scaled = KNeighborsClassifier(n_neighbors=5)
+
+knn_scaled.fit(X_train_scaled, y_train)
+
+y_pred_knn_scaled = knn_scaled.predict(X_test_scaled)
+
+print("KNN Scaled Accuracy:")
+print(accuracy_score(y_test, y_pred_knn_scaled))
+
+print(classification_report(y_test, y_pred_knn_scaled))
+
+knn_pca = KNeighborsClassifier(n_neighbors=5)
+
+knn_pca.fit(X_train_pca, y_train)
+
+y_pred_knn_pca = knn_pca.predict(X_test_pca)
+
+print("KNN PCA Accuracy:")
+print(accuracy_score(y_test, y_pred_knn_pca))
+
+print(classification_report(y_test, y_pred_knn_pca))
+
+# PCA may improve KNN because reducing dimensions can remove noise and
+# make distance calculations more meaningful.
+
+depths = [3, 5, 10, None]
+
+for depth in depths:
+    tree = DecisionTreeClassifier(
+        max_depth=depth,
+        random_state=42
+    )
+
+    tree.fit(X_train, y_train)
+
+    train_accuracy = tree.score(X_train, y_train)
+    test_accuracy = tree.score(X_test, y_test)
+
+    print(f"Depth: {depth}")
+    print("Training accuracy:", train_accuracy)
+    print("Test accuracy:", test_accuracy)
+    print()
+
+# As tree depth increases, training accuracy continues increasing,
+# but test accuracy eventually stops improving or decreases.
+# This shows that deeper trees can memorize training data and overfit.
+
+best_depth = 5
+
+tree = DecisionTreeClassifier(
+    max_depth=best_depth,
+    random_state=42
+)
+
+tree.fit(X_train, y_train)
+
+y_pred_tree = tree.predict(X_test)
+
+print("Decision Tree Accuracy:")
+print(accuracy_score(y_test, y_pred_tree))
+
+print(classification_report(y_test, y_pred_tree))
+
+# Random forest
+
+rf = RandomForestClassifier(
+    random_state=42
+)
+
+rf.fit(X_train, y_train)
+
+y_pred_rf = rf.predict(X_test)
+
+print("Random Forest Accuracy:")
+print(accuracy_score(y_test, y_pred_rf))
+
+print(classification_report(y_test, y_pred_rf))
+
+# Logistic regression scaled data
+
+logreg = LogisticRegression(
+    C=1.0,
+    max_iter=1000,
+    solver="liblinear"
+)
+
+logreg.fit(X_train_scaled, y_train)
+
+y_pred_logreg = logreg.predict(X_test_scaled)
+
+print("Logistic Regression Scaled Accuracy:")
+print(accuracy_score(y_test, y_pred_logreg))
+
+print(classification_report(y_test, y_pred_logreg))
+
+# Logistic regression PCA data
+
+logreg_pca = LogisticRegression(
+    C=1.0,
+    max_iter=1000,
+    solver="liblinear"
+)
+
+logreg_pca.fit(X_train_pca, y_train)
+
+y_pred_logreg_pca = logreg_pca.predict(X_test_pca)
+
+print("Logistic Regression PCA Accuracy:")
+print(accuracy_score(y_test, y_pred_logreg_pca))
+
+print(classification_report(y_test, y_pred_logreg_pca))
+
+
+# Overall, Random Forest/Logistic Regression/KNN achieved the strongest
+# performance. PCA did not necessarily improve every model because reducing
+# dimensions can remove useful information. However, PCA can help models
+# that are sensitive to feature scale and distance calculations.
+#
+# Accuracy alone is not the best metric for spam filtering. False positives
+# are especially costly because legitimate emails may be incorrectly marked
+# as spam. A good spam filter should balance precision and recall, depending
+# on whether preventing spam or protecting legitimate emails is more important.
+
+# Confusion matrix
+best_model_predictions = y_pred_rf
+
+cm = confusion_matrix(
+    y_test,
+    best_model_predictions
+)
+
+disp = ConfusionMatrixDisplay(
+    confusion_matrix=cm,
+    display_labels=["Ham", "Spam"]
+)
+
+disp.plot()
+
+plt.title("Best Model Confusion Matrix")
+
+plt.savefig(
+    "outputs/best_model_confusion_matrix.png"
+)
+
+plt.close()
+
+# The confusion matrix shows whether the model makes more false positives
+# (ham classified as spam) or false negatives (spam classified as ham).
+# For spam filtering, false positives are often more harmful because users
+# may lose important legitimate emails.
+
+# Random Forest achieved the highest overall accuracy (94.5%) and
+# performed better than the other classifiers. Scaling greatly improved
+# KNN performance compared with using the unscaled data. PCA produced
+# only a very small improvement for KNN but slightly reduced the accuracy
+# of Logistic Regression. This suggests that PCA did not provide a major
+# benefit for this dataset because the original features already contain
+# useful information.
+#
+# For a spam filter, accuracy alone is not the most important metric.
+# False positives, where legitimate emails are marked as spam, can cause
+# users to miss important messages. Therefore, minimizing false positives
+# is generally more important than maximizing overall accuracy.
+
+# Task4
+# knn unscaled
+knn = KNeighborsClassifier(n_neighbors=5)
+
+scores = cross_val_score(
+    knn,
+    X_train,
+    y_train,
+    cv=5
+)
+
+print("KNN (Unscaled)")
+print("Mean:", scores.mean())
+print("Std:", scores.std())
+print()
+
+# knn scaled
+knn = KNeighborsClassifier(n_neighbors=5)
+
+scores = cross_val_score(
+    knn,
+    X_train_scaled,
+    y_train,
+    cv=5
+)
+
+print("KNN (Scaled)")
+print("Mean:", scores.mean())
+print("Std:", scores.std())
+print()
+
+# knn pca
+knn = KNeighborsClassifier(n_neighbors=5)
+
+scores = cross_val_score(
+    knn,
+    X_train_pca,
+    y_train,
+    cv=5
+)
+
+print("KNN (PCA)")
+print("Mean:", scores.mean())
+print("Std:", scores.std())
+print()
+
+# decision tree
+tree = DecisionTreeClassifier(
+    max_depth=5,
+    random_state=42
+)
+
+scores = cross_val_score(
+    tree,
+    X_train,
+    y_train,
+    cv=5
+)
+
+print("Decision Tree")
+print("Mean:", scores.mean())
+print("Std:", scores.std())
+print()
+
+# random forest
+
+rf = RandomForestClassifier(random_state=42)
+
+scores = cross_val_score(
+    rf,
+    X_train,
+    y_train,
+    cv=5
+)
+
+print("Random Forest")
+print("Mean:", scores.mean())
+print("Std:", scores.std())
+print()
+
+# logistic regression(scaled)
+
+logreg = LogisticRegression(
+    C=1.0,
+    max_iter=1000,
+    solver="liblinear"
+)
+
+scores = cross_val_score(
+    logreg,
+    X_train_scaled,
+    y_train,
+    cv=5
+)
+
+print("Logistic Regression (Scaled)")
+print("Mean:", scores.mean())
+print("Std:", scores.std())
+print()
+
+# logistiv regression(pca)
+
+logreg = LogisticRegression(
+    C=1.0,
+    max_iter=1000,
+    solver="liblinear"
+)
+
+scores = cross_val_score(
+    logreg,
+    X_train_pca,
+    y_train,
+    cv=5
+)
+
+print("Logistic Regression (PCA)")
+print("Mean:", scores.mean())
+print("Std:", scores.std())
+print()
+
+# Cross-validation confirmed the results from the train/test split.
+# Random Forest had the highest mean accuracy (95.4%), making it the
+# best-performing classifier overall. Logistic Regression with PCA had
+# the lowest standard deviation, indicating the most consistent
+# performance across the five folds. The rankings from cross-validation
+# were very similar to those from the single train/test split, suggesting
+# that the models generalize well and the original split was representative.
+
+# My pipelines
+
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+
+# random forest pipeline
+
+rf_pipeline = Pipeline([
+    ("classifier", RandomForestClassifier(random_state=42))
+])
+
+rf_pipeline.fit(X_train, y_train)
+
+y_pred_rf = rf_pipeline.predict(X_test)
+
+print("Random Forest Pipeline")
+print(classification_report(y_test, y_pred_rf))
+
+# logistiv regression pipeline
+
+logreg_pipeline = Pipeline([
+    ("scaler", StandardScaler()),
+    ("classifier", LogisticRegression(
+        C=1.0,
+        max_iter=1000,
+        solver="liblinear"
+    ))
+])
+
+logreg_pipeline.fit(X_train, y_train)
+
+y_pred_log = logreg_pipeline.predict(X_test)
+
+print("Logistic Regression Pipeline")
+print(classification_report(y_test, y_pred_log))
+
+# The two pipelines have different structures because the models have
+# different preprocessing requirements. The Random Forest pipeline only
+# contains the classifier since tree-based models are not sensitive to
+# feature scaling. The Logistic Regression pipeline includes a
+# StandardScaler because logistic regression performs better when all
+# features are on a similar scale.
+
+# ---What is the practical value of packaging a model---
+
+# Pipelines make machine learning workflows easier to use and less
+# error-prone. They automatically apply preprocessing in the correct
+# order, help prevent data leakage by fitting preprocessing steps only
+# on the training data, and allow the entire workflow to be treated as
+# a single object. This makes it much easier to share or deploy a model
+# because users only need to call fit() and predict() without worrying
+# about the preprocessing steps.
