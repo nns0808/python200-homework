@@ -311,16 +311,15 @@ tree_results_df = pd.DataFrame(tree_results)
 
 print(tree_results_df)
 
-# Choose the best tree depth based on validation performance.
-# Depth=5 provided a good balance between training and test accuracy.
-# Deeper trees improved training accuracy but increased the risk of overfitting.
-
-
-# As tree depth increases, training accuracy continues increasing,
-# but test accuracy eventually stops improving or decreases.
-# This shows that deeper trees can memorize training data and overfit.
-
 best_depth = 5
+
+print(f"\nProduction choice: Decision Tree (max_depth={best_depth})")
+
+# The table above compares both training and test accuracy for each depth.
+# I selected max_depth=5 for production because it provided a good balance
+# between training and test accuracy. Deeper trees achieved higher training
+# accuracy but showed little or no improvement in test accuracy, indicating
+# an increased risk of overfitting.
 
 tree = DecisionTreeClassifier(
     max_depth=best_depth,
@@ -344,7 +343,8 @@ save_result(
     tree_accuracy
 )
 
-print(classification_report(y_test, y_pred_tree))
+print("\nSelected production model: Decision Tree (max_depth=5)")
+
 
 
 # Decision Tree feature importance
@@ -402,15 +402,15 @@ rf_importance = rf_importance.sort_values(
 print("\nTop 10 Random Forest Features:")
 print(rf_importance.head(10))
 
-# The Random Forest top features show which email characteristics contribute
-# most to spam classification. Features related to word frequency, special
-# characters, and capitalization patterns are important because spam emails
-# often use different writing and formatting patterns compared with legitimate
-# emails.
+# Both the Decision Tree and the Random Forest identified many of the same
+# features as important for distinguishing spam from ham, indicating agreement
+# on the strongest predictors. Features related to word frequency, special
+# characters, and capitalization patterns consistently ranked among the most
+# important in both models.
 
-# The Decision Tree and Random Forest feature rankings help identify similar
-# important predictors, although Random Forest provides more stable importance
-# estimates because it combines many trees.
+# The Random Forest importance values are generally more reliable because they
+# are averaged across many decision trees, making them less sensitive to the
+# specific training sample than a single Decision Tree.
 
 
 # Plot top 10 Random Forest feature importances
@@ -789,10 +789,13 @@ rf_pipeline.fit(X_train, y_train)
 
 y_pred_rf = rf_pipeline.predict(X_test)
 
+rf_pipeline_accuracy = accuracy_score(y_test, y_pred_rf)
+
 print("Random Forest Pipeline")
+print("Accuracy:", rf_pipeline_accuracy)
 print(classification_report(y_test, y_pred_rf))
 
-# logistiv regression pipeline
+# logistic regression pipeline
 
 from sklearn.decomposition import PCA
 
@@ -810,28 +813,21 @@ logreg_pipeline.fit(X_train, y_train)
 
 y_pred_log = logreg_pipeline.predict(X_test)
 
+logreg_pipeline_accuracy = accuracy_score(y_test, y_pred_log)
+
 print("Logistic Regression Pipeline")
+print("Accuracy:", logreg_pipeline_accuracy)
 print(classification_report(y_test, y_pred_log))
 
 
-# The pipeline preserves the PCA preprocessing sequence from Task 2:
-# 1. StandardScaler is fitted only on X_train.
-# 2. PCA is fitted on the scaled training data.
-# 3. The same scaler and PCA transformation are applied to X_test.
-# This prevents data leakage and keeps preprocessing consistent.
-# The pipeline preserves the same preprocessing order used during PCA analysis:
-# StandardScaler is fitted on the training data first, then PCA is fitted on
-# the scaled training data. The test data follows the same transformations
-# automatically during prediction.
-# The Random Forest pipeline does not include scaling or PCA because tree-based
-# models do not depend on feature distance and are not sensitive to feature
-# magnitude.
-# The Logistic Regression pipeline includes StandardScaler and PCA because
-# logistic regression benefits from normalized features and PCA can reduce
-# dimensionality while preserving most of the information in the dataset.
-#
-# Pipelines make preprocessing and model training part of one workflow,
-# preventing data leakage and making the model easier to reproduce and deploy.
+# The pipelines use the same preprocessing logic as Task 2.
+# The Random Forest pipeline does not require scaling or PCA because
+# tree-based models are insensitive to feature scaling.
+# The Logistic Regression pipeline applies StandardScaler followed by
+# PCA(n_components=n), using the same number of principal components
+# selected from the training data in Task 2. The pipeline accuracies
+# should closely match the manually implemented models, confirming that
+# the pipeline reproduces the same workflow while preventing data leakage.
 
 # ---What is the practical value of packaging a model---
 

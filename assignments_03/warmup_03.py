@@ -172,25 +172,21 @@ print(classification_report(y_test, y_pred_tree))
 
 # Logistic Regression
 
-from sklearn.multiclass import OneVsRestClassifier
+# Q1
+# Train logistic regression models with different C values
 
 c_values = [0.01, 1.0, 100]
 
 for c in c_values:
-    model = OneVsRestClassifier(
-        LogisticRegression(
-            C=c,
-            max_iter=1000,
-            solver="liblinear"
-        )
+    model = LogisticRegression(
+        C=c,
+        max_iter=1000,
+        random_state=42
     )
 
     model.fit(X_train_scaled, y_train)
 
-    coef_size = sum(
-        np.abs(estimator.coef_).sum()
-        for estimator in model.estimators_
-    )
+    coef_size = np.abs(model.coef_).sum()
 
     print(f"C = {c}: Total coefficient magnitude = {coef_size:.4f}")
 
@@ -305,15 +301,19 @@ fig, axes = plt.subplots(
 )
 
 # ----- Original images -----
-row_labels = ["Original", "n = 2", "n = 5", "n = 15", "n = 40"]
 
 for col in range(5):
     axes[0, col].imshow(images[col], cmap="gray_r")
     axes[0, col].set_title(f"Digit {y_digits[col]}")
     axes[0, col].axis("off")
 
-# Label original row
-axes[0, 0].set_ylabel(row_labels[0], fontsize=12)
+axes[0, 0].set_ylabel(
+    "Original",
+    rotation=0,
+    labelpad=35,
+    fontsize=12,
+    va="center"
+)
 
 # ----- Reconstructed images -----
 
@@ -324,13 +324,16 @@ for row, n in enumerate(component_list, start=1):
         axes[row, col].imshow(reconstruction, cmap="gray_r")
         axes[row, col].axis("off")
 
-    # Label each PCA reconstruction row
     axes[row, 0].set_ylabel(
-        row_labels[row],
-        fontsize=12
+        f"n = {n}",
+        rotation=0,
+        labelpad=35,
+        fontsize=12,
+        va="center"
     )
 
 plt.tight_layout()
+plt.subplots_adjust(left=0.15)
 
 # Save the figure
 plt.savefig(OUTPUT_DIR /"pca_reconstructions.png")
