@@ -3,6 +3,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 
+from pathlib import Path
+
+OUTPUT_DIR = Path(__file__).parent / "outputs"
+OUTPUT_DIR.mkdir(exist_ok=True)
+
 column_names = [
     "word_freq_make",
     "word_freq_address",
@@ -102,7 +107,7 @@ for feature in features:
 
     plt.tight_layout()
 
-    plt.savefig(f"outputs/{feature}_boxplot.png")
+    plt.savefig(OUTPUT_DIR / f"{feature}_boxplot.png")
 
     plt.show()
 
@@ -174,7 +179,7 @@ plt.axhline(
     linestyle="--"
 )
 
-plt.savefig("outputs/pca_variance_explained.png")
+plt.savefig(OUTPUT_DIR / "pca_variance_explained.png")
 
 plt.close()
 
@@ -204,14 +209,34 @@ from sklearn.metrics import (
     confusion_matrix,
     ConfusionMatrixDisplay
 )
+
+# Collect model comparison results
+results = []
+
+def save_result(name, accuracy):
+    results.append({
+        "Model": name,
+        "Accuracy": accuracy
+    })
+
 knn_unscaled = KNeighborsClassifier(n_neighbors=5)
 
 knn_unscaled.fit(X_train, y_train)
 
 y_pred_knn_unscaled = knn_unscaled.predict(X_test)
 
+knn_unscaled_accuracy = accuracy_score(
+    y_test,
+    y_pred_knn_unscaled
+)
+
 print("KNN Unscaled Accuracy:")
-print(accuracy_score(y_test, y_pred_knn_unscaled))
+print(knn_unscaled_accuracy)
+
+save_result(
+    "KNN Unscaled",
+    knn_unscaled_accuracy
+)
 
 print(classification_report(y_test, y_pred_knn_unscaled))
 
@@ -221,8 +246,18 @@ knn_scaled.fit(X_train_scaled, y_train)
 
 y_pred_knn_scaled = knn_scaled.predict(X_test_scaled)
 
+knn_scaled_accuracy = accuracy_score(
+    y_test,
+    y_pred_knn_scaled
+)
+
 print("KNN Scaled Accuracy:")
-print(accuracy_score(y_test, y_pred_knn_scaled))
+print(knn_scaled_accuracy)
+
+save_result(
+    "KNN Scaled",
+    knn_scaled_accuracy
+)
 
 print(classification_report(y_test, y_pred_knn_scaled))
 
@@ -232,17 +267,30 @@ knn_pca.fit(X_train_pca, y_train)
 
 y_pred_knn_pca = knn_pca.predict(X_test_pca)
 
+knn_pca_accuracy = accuracy_score(
+    y_test,
+    y_pred_knn_pca
+)
+
 print("KNN PCA Accuracy:")
-print(accuracy_score(y_test, y_pred_knn_pca))
+print(knn_pca_accuracy)
+
+save_result(
+    "KNN PCA",
+    knn_pca_accuracy
+)
 
 print(classification_report(y_test, y_pred_knn_pca))
 
 # PCA may improve KNN because reducing dimensions can remove noise and
 # make distance calculations more meaningful.
 
+tree_results = []
+
 depths = [3, 5, 10, None]
 
 for depth in depths:
+
     tree = DecisionTreeClassifier(
         max_depth=depth,
         random_state=42
@@ -253,10 +301,15 @@ for depth in depths:
     train_accuracy = tree.score(X_train, y_train)
     test_accuracy = tree.score(X_test, y_test)
 
-    print(f"Depth: {depth}")
-    print("Training accuracy:", train_accuracy)
-    print("Test accuracy:", test_accuracy)
-    print()
+    tree_results.append({
+        "Depth": depth,
+        "Train Accuracy": train_accuracy,
+        "Test Accuracy": test_accuracy
+    })
+
+tree_results_df = pd.DataFrame(tree_results)
+
+print(tree_results_df)
 
 # As tree depth increases, training accuracy continues increasing,
 # but test accuracy eventually stops improving or decreases.
@@ -276,7 +329,33 @@ y_pred_tree = tree.predict(X_test)
 print("Decision Tree Accuracy:")
 print(accuracy_score(y_test, y_pred_tree))
 
+tree_accuracy = accuracy_score(
+    y_test,
+    y_pred_tree
+)
+
+save_result(
+    "Decision Tree depth=5",
+    tree_accuracy
+)
+
 print(classification_report(y_test, y_pred_tree))
+
+
+# Decision Tree feature importance
+
+tree_importance = pd.DataFrame({
+    "Feature": X_train.columns,
+    "Importance": tree.feature_importances_
+})
+
+tree_importance = tree_importance.sort_values(
+    by="Importance",
+    ascending=False
+)
+
+print("\nTop 10 Decision Tree Features:")
+print(tree_importance.head(10))
 
 # Random forest
 
@@ -288,10 +367,61 @@ rf.fit(X_train, y_train)
 
 y_pred_rf = rf.predict(X_test)
 
+rf_accuracy = accuracy_score(
+    y_test,
+    y_pred_rf
+)
+
 print("Random Forest Accuracy:")
-print(accuracy_score(y_test, y_pred_rf))
+print(rf_accuracy)
+
+save_result(
+    "Random Forest",
+    rf_accuracy
+)
 
 print(classification_report(y_test, y_pred_rf))
+
+# Random Forest feature importance
+
+rf_importance = pd.DataFrame({
+    "Feature": X_train.columns,
+    "Importance": rf.feature_importances_
+})
+
+rf_importance = rf_importance.sort_values(
+    by="Importance",
+    ascending=False
+)
+
+print("\nTop 10 Random Forest Features:")
+print(rf_importance.head(10))
+
+
+# Plot top 10 Random Forest feature importances
+
+top10_rf = rf_importance.head(10)
+
+plt.figure(figsize=(8, 5))
+
+plt.barh(
+    top10_rf["Feature"],
+    top10_rf["Importance"]
+)
+
+plt.xlabel("Importance")
+plt.ylabel("Feature")
+plt.title("Top 10 Random Forest Feature Importances")
+
+plt.gca().invert_yaxis()
+
+plt.tight_layout()
+
+plt.savefig(
+    OUTPUT_DIR / "feature_importances.png"
+)
+
+plt.show()
 
 # Logistic regression scaled data
 
@@ -307,6 +437,16 @@ y_pred_logreg = logreg.predict(X_test_scaled)
 
 print("Logistic Regression Scaled Accuracy:")
 print(accuracy_score(y_test, y_pred_logreg))
+
+logreg_accuracy = accuracy_score(
+    y_test,
+    y_pred_logreg
+)
+
+save_result(
+    "Logistic Regression",
+    logreg_accuracy
+)
 
 print(classification_report(y_test, y_pred_logreg))
 
@@ -338,7 +478,21 @@ print(classification_report(y_test, y_pred_logreg_pca))
 # as spam. A good spam filter should balance precision and recall, depending
 # on whether preventing spam or protecting legitimate emails is more important.
 
+
+# Model comparison summary
+
+comparison = pd.DataFrame(results)
+
+print("\nModel Comparison:")
+print(
+    comparison.sort_values(
+        "Accuracy",
+        ascending=False
+    )
+)
 # Confusion matrix
+
+
 best_model_predictions = y_pred_rf
 
 cm = confusion_matrix(
@@ -356,7 +510,7 @@ disp.plot()
 plt.title("Best Model Confusion Matrix")
 
 plt.savefig(
-    "outputs/best_model_confusion_matrix.png"
+    OUTPUT_DIR / "best_model_confusion_matrix.png"
 )
 
 plt.close()
@@ -380,7 +534,10 @@ plt.close()
 # is generally more important than maximizing overall accuracy.
 
 # Task4
+
 # knn unscaled
+cv_results = []
+
 knn = KNeighborsClassifier(n_neighbors=5)
 
 scores = cross_val_score(
@@ -393,6 +550,13 @@ scores = cross_val_score(
 print("KNN (Unscaled)")
 print("Mean:", scores.mean())
 print("Std:", scores.std())
+
+cv_results.append({
+    "Model": "KNN (Unscaled)",
+    "Mean Accuracy": scores.mean(),
+    "Std Accuracy": scores.std()
+})
+
 print()
 
 # knn scaled
@@ -408,6 +572,13 @@ scores = cross_val_score(
 print("KNN (Scaled)")
 print("Mean:", scores.mean())
 print("Std:", scores.std())
+
+cv_results.append({
+    "Model": "KNN (Scaled)",
+    "Mean Accuracy": scores.mean(),
+    "Std Accuracy": scores.std()
+})
+
 print()
 
 # knn pca
@@ -423,9 +594,17 @@ scores = cross_val_score(
 print("KNN (PCA)")
 print("Mean:", scores.mean())
 print("Std:", scores.std())
+
+cv_results.append({
+    "Model": "KNN(PCA)",
+    "Mean Accuracy": scores.mean(),
+    "Std Accuracy": scores.std()
+})
+
 print()
 
 # decision tree
+
 tree = DecisionTreeClassifier(
     max_depth=5,
     random_state=42
@@ -441,6 +620,13 @@ scores = cross_val_score(
 print("Decision Tree")
 print("Mean:", scores.mean())
 print("Std:", scores.std())
+
+cv_results.append({
+    "Model": "Decision Tree",
+    "Mean Accuracy": scores.mean(),
+    "Std Accuracy": scores.std()
+})
+
 print()
 
 # random forest
@@ -457,6 +643,13 @@ scores = cross_val_score(
 print("Random Forest")
 print("Mean:", scores.mean())
 print("Std:", scores.std())
+
+cv_results.append({
+    "Model": "Random Forest",
+    "Mean Accuracy": scores.mean(),
+    "Std Accuracy": scores.std()
+})
+
 print()
 
 # logistic regression(scaled)
@@ -477,6 +670,13 @@ scores = cross_val_score(
 print("Logistic Regression (Scaled)")
 print("Mean:", scores.mean())
 print("Std:", scores.std())
+
+cv_results.append({
+    "Model": "Logistic Regression (Scaled)",
+    "Mean Accuracy": scores.mean(),
+    "Std Accuracy": scores.std()
+})
+
 print()
 
 # logistiv regression(pca)
@@ -497,15 +697,44 @@ scores = cross_val_score(
 print("Logistic Regression (PCA)")
 print("Mean:", scores.mean())
 print("Std:", scores.std())
+
+cv_results.append({
+    "Model": "Logistic Regression (PCA)",
+    "Mean Accuracy": scores.mean(),
+    "Std Accuracy": scores.std()
+})
+
 print()
 
-# Cross-validation confirmed the results from the train/test split.
-# Random Forest had the highest mean accuracy (95.4%), making it the
-# best-performing classifier overall. Logistic Regression with PCA had
-# the lowest standard deviation, indicating the most consistent
-# performance across the five folds. The rankings from cross-validation
-# were very similar to those from the single train/test split, suggesting
-# that the models generalize well and the original split was representative.
+cv_results_df = pd.DataFrame(cv_results)
+
+print("\nCross Validation Comparison:")
+print(
+    cv_results_df.sort_values(
+        by="Mean Accuracy",
+        ascending=False
+    )
+)
+
+# Cross-validation confirmed the ranking observed in the test-set comparison.
+# Random Forest achieved the highest mean accuracy and showed consistent
+# performance across the five folds, making it the strongest classifier for
+# this dataset.
+#
+# Logistic Regression showed stable performance with a relatively small
+# standard deviation, indicating consistent results across different splits.
+#
+# The Decision Tree depth analysis showed that increasing tree depth improves
+# training accuracy but can lead to overfitting when the tree becomes too
+# complex. The selected max_depth=5 provided a balance between performance
+# and generalization.
+#
+# Feature importance analysis showed that both Decision Tree and Random Forest
+# relied on specific email characteristics, such as word frequency, character
+# frequency, and capital letter patterns, to distinguish spam from ham.
+#
+# Overall, Random Forest provided the best combination of accuracy, stability,
+# and ability to capture complex patterns in the Spambase dataset.
 
 # My pipelines
 
@@ -527,8 +756,11 @@ print(classification_report(y_test, y_pred_rf))
 
 # logistiv regression pipeline
 
+from sklearn.decomposition import PCA
+
 logreg_pipeline = Pipeline([
     ("scaler", StandardScaler()),
+    ("pca", PCA(n_components=n)),
     ("classifier", LogisticRegression(
         C=1.0,
         max_iter=1000,
@@ -543,12 +775,16 @@ y_pred_log = logreg_pipeline.predict(X_test)
 print("Logistic Regression Pipeline")
 print(classification_report(y_test, y_pred_log))
 
-# The two pipelines have different structures because the models have
-# different preprocessing requirements. The Random Forest pipeline only
-# contains the classifier since tree-based models are not sensitive to
-# feature scaling. The Logistic Regression pipeline includes a
-# StandardScaler because logistic regression performs better when all
-# features are on a similar scale.
+# The Random Forest pipeline does not include scaling or PCA because tree-based
+# models do not depend on feature distance and are not sensitive to feature
+# magnitude.
+#
+# The Logistic Regression pipeline includes StandardScaler and PCA because
+# logistic regression benefits from normalized features and PCA can reduce
+# dimensionality while preserving most of the information in the dataset.
+#
+# Pipelines make preprocessing and model training part of one workflow,
+# preventing data leakage and making the model easier to reproduce and deploy.
 
 # ---What is the practical value of packaging a model---
 

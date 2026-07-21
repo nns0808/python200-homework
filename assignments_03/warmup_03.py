@@ -18,6 +18,11 @@ from sklearn.metrics import (
     ConfusionMatrixDisplay
 )
 
+from pathlib import Path
+
+OUTPUT_DIR = Path(__file__).parent / "outputs"
+OUTPUT_DIR.mkdir(exist_ok=True)
+
 iris = load_iris(as_frame=True)
 X = iris.data
 y = iris.target
@@ -130,7 +135,7 @@ disp.plot(cmap="Blues")
 plt.title("KNN Confusion Matrix")
 
 # Save the figure
-plt.savefig("outputs/knn_confusion_matrix.png")
+plt.savefig(OUTPUT_DIR / "knn_confusion_matrix.png")
 plt.show()
 
 # The model most often confuses versicolor and virginica.
@@ -161,8 +166,14 @@ print(classification_report(y_test, y_pred_tree))
 # Logistic Regression
 # Q1
 # Train logistic regression models with different C values
-from sklearn.multiclass import OneVsRestClassifier
+# Logistic Regression
+
 # Train logistic regression models with different C values
+
+# Logistic Regression
+
+from sklearn.multiclass import OneVsRestClassifier
+
 c_values = [0.01, 1.0, 100]
 
 for c in c_values:
@@ -176,7 +187,6 @@ for c in c_values:
 
     model.fit(X_train_scaled, y_train)
 
-    # Calculate total coefficient magnitude
     coef_size = sum(
         np.abs(estimator.coef_).sum()
         for estimator in model.estimators_
@@ -213,7 +223,7 @@ for digit in range(10):
 plt.tight_layout()
 
 # Save the figure
-plt.savefig("outputs/sample_digits.png")
+plt.savefig(OUTPUT_DIR /"sample_digits.png")
 
 plt.show()
 
@@ -243,7 +253,7 @@ plt.title("PCA 2D Projection of digits")
 plt.colorbar(scatter, label="Digit")
 
 # Save the figure
-plt.savefig("outputs/pca_2d_projection.png")
+plt.savefig(OUTPUT_DIR /"pca_2d_projection.png")
 
 plt.show()
 
@@ -268,7 +278,7 @@ plt.title("PCA Cumulative Explained Variance")
 plt.grid(True)
 
 # Save the figure
-plt.savefig("outputs/pca_variance_explained.png")
+plt.savefig(OUTPUT_DIR /"pca_variance_explained.png")
 
 plt.show()
 
@@ -295,14 +305,18 @@ fig, axes = plt.subplots(
 )
 
 # ----- Original images -----
+row_labels = ["Original", "n = 2", "n = 5", "n = 15", "n = 40"]
+
 for col in range(5):
     axes[0, col].imshow(images[col], cmap="gray_r")
     axes[0, col].set_title(f"Digit {y_digits[col]}")
     axes[0, col].axis("off")
 
-axes[0, 0].set_ylabel("Original", fontsize=12)
+# Label original row
+axes[0, 0].set_ylabel(row_labels[0], fontsize=12)
 
 # ----- Reconstructed images -----
+
 for row, n in enumerate(component_list, start=1):
     for col in range(5):
         reconstruction = reconstruct_digit(col, scores, pca, n)
@@ -310,12 +324,16 @@ for row, n in enumerate(component_list, start=1):
         axes[row, col].imshow(reconstruction, cmap="gray_r")
         axes[row, col].axis("off")
 
-    axes[row, 0].set_ylabel(f"{n} PCs", fontsize=12)
+    # Label each PCA reconstruction row
+    axes[row, 0].set_ylabel(
+        row_labels[row],
+        fontsize=12
+    )
 
 plt.tight_layout()
 
 # Save the figure
-plt.savefig("outputs/pca_reconstructions.png")
+plt.savefig(OUTPUT_DIR /"pca_reconstructions.png")
 
 plt.show()
 
