@@ -185,7 +185,14 @@ plt.close()
 
 n = np.argmax(cumulative_variance >= 0.90) + 1
 
-print("Number of components explaining 90% variance:", n)
+print(f"Number of PCA components needed to reach 90% cumulative explained variance: {n}")
+
+n = np.argmax(cumulative_variance >= 0.90) + 1
+
+print(
+    f"n = {n} components are needed to reach "
+    f"{cumulative_variance[n-1]:.4f} cumulative explained variance."
+)
 
 X_train_pca = pca.transform(X_train_scaled)[:, :n]
 
@@ -193,6 +200,9 @@ X_test_pca = pca.transform(X_test_scaled)[:, :n]
 
 print("Original features:", X_train.shape[1])
 print("PCA features:", X_train_pca.shape[1])
+
+# The selected n is the smallest number of principal components that
+# preserves at least 90% of the variance in the training data.
 
 # Task3
 
@@ -401,6 +411,22 @@ rf_importance = rf_importance.sort_values(
 
 print("\nTop 10 Random Forest Features:")
 print(rf_importance.head(10))
+
+# Compare Decision Tree and Random Forest feature importances
+
+comparison = pd.DataFrame({
+    "Feature": X_train.columns,
+    "Decision Tree Importance": tree.feature_importances_,
+    "Random Forest Importance": rf.feature_importances_
+})
+
+comparison = comparison.sort_values(
+    by="Random Forest Importance",
+    ascending=False
+)
+
+print("\nTop 10 Feature Importance Comparison:")
+print(comparison.head(10))
 
 # Both the Decision Tree and the Random Forest identified many of the same
 # features as important for distinguishing spam from ham, indicating agreement
@@ -797,11 +823,10 @@ print(classification_report(y_test, y_pred_rf))
 
 # logistic regression pipeline
 
-from sklearn.decomposition import PCA
+# logistic regression pipeline
 
 logreg_pipeline = Pipeline([
     ("scaler", StandardScaler()),
-    ("pca", PCA(n_components=n)),
     ("classifier", LogisticRegression(
         C=1.0,
         max_iter=1000,
@@ -820,14 +845,16 @@ print("Accuracy:", logreg_pipeline_accuracy)
 print(classification_report(y_test, y_pred_log))
 
 
-# The pipelines use the same preprocessing logic as Task 2.
-# The Random Forest pipeline does not require scaling or PCA because
-# tree-based models are insensitive to feature scaling.
-# The Logistic Regression pipeline applies StandardScaler followed by
-# PCA(n_components=n), using the same number of principal components
-# selected from the training data in Task 2. The pipeline accuracies
-# should closely match the manually implemented models, confirming that
-# the pipeline reproduces the same workflow while preventing data leakage.
+# The Logistic Regression pipeline uses the best non-tree preprocessing
+# approach identified in Task 3. Since PCA slightly reduced Logistic
+# Regression performance on this dataset, the pipeline uses the
+# StandardScaler - Logistic Regression workflow without PCA.
+
+# The pipeline applies StandardScaler before Logistic Regression,
+# matching the preprocessing used in the best-performing non-tree model.
+# The pipeline prevents data leakage by fitting preprocessing steps only
+# on the training data and applying the same transformations to new data.
+
 
 # ---What is the practical value of packaging a model---
 

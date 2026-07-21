@@ -109,16 +109,24 @@ print("Standard deviation:", cv_scores.std())
 # Q4
 
 # Test different values of k
+
 k_values = [1, 3, 5, 7, 9, 11, 13, 15]
 
 for k in k_values:
     knn = KNeighborsClassifier(n_neighbors=k)
     cv_scores = cross_val_score(knn, X_train, y_train, cv=5)
-    print(f"k = {k}: Mean CV Accuracy = {cv_scores.mean():.4f}")
+
+    print(f"k = {k}")
+    print(f"Fold scores: {cv_scores}")
+    print(f"Mean CV Accuracy: {cv_scores.mean():.4f}")
+    print(f"Standard Deviation: {cv_scores.std():.4f}")
+    print()
 
 # I would choose the k with the highest mean cross-validation accuracy.
-# If multiple k values have similar scores, I would choose the larger k
-# because it is generally less sensitive to noise and less likely to overfit.
+# If multiple k values have similar mean scores, I would choose the larger
+# k because it is generally less sensitive to noise and less likely to overfit.
+
+
 
 # Classifier Evaluation
 # Q1
@@ -163,36 +171,39 @@ print(classification_report(y_test, y_pred_tree))
 # Scaling should make little or no difference for a Decision Tree because
 # it splits data based on feature values rather than distance calculations.
 
-# Logistic Regression
-# Q1
-# Train logistic regression models with different C values
-# Logistic Regression
-
-# Train logistic regression models with different C values
-
-# Logistic Regression
+## Logistic Regression
 
 # Q1
+
 # Train logistic regression models with different C values
 
-c_values = [0.01, 1.0, 100]
+from sklearn.linear_model import LogisticRegression
+from sklearn.multiclass import OneVsRestClassifier
+
+c_values = [0.01, 1.0, 100.0]
 
 for c in c_values:
-    model = LogisticRegression(
-        C=c,
-        max_iter=1000,
-        random_state=42
+    log_reg = OneVsRestClassifier(
+        LogisticRegression(
+            C=c,
+            max_iter=1000,
+            solver="liblinear",
+        )
     )
 
-    model.fit(X_train_scaled, y_train)
+    log_reg.fit(X_train_scaled, y_train)
 
-    coef_size = np.abs(model.coef_).sum()
+    coef_sum = sum(
+        np.abs(estimator.coef_).sum()
+        for estimator in log_reg.estimators_
+    )
 
-    print(f"C = {c}: Total coefficient magnitude = {coef_size:.4f}")
+    print(f"C = {c}, total coefficient magnitude = {coef_sum:.4f}")
 
 # As C increases, the total coefficient magnitude increases because
-# the regularization becomes weaker, allowing the model to fit the
-# training data more closely.
+# regularization becomes weaker. Smaller C values apply stronger
+# regularization, keeping the coefficients smaller and helping
+# reduce overfitting.
 
 # PCA
 # Q1
@@ -213,13 +224,16 @@ for digit in range(10):
     index = np.where(y_digits == digit)[0][0]
 
     axes[digit].imshow(images[index], cmap="gray_r")
-    axes[digit].set_title(str(digit))
+    axes[digit].set_title(f"Digit: {digit}")
     axes[digit].axis("off")
 
 plt.tight_layout()
 
 # Save the figure
-plt.savefig(OUTPUT_DIR /"sample_digits.png")
+plt.savefig(
+    OUTPUT_DIR / "sample_digits.png",
+    bbox_inches="tight"
+)
 
 plt.show()
 
