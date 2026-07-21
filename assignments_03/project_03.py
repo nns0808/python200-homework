@@ -311,6 +311,11 @@ tree_results_df = pd.DataFrame(tree_results)
 
 print(tree_results_df)
 
+# Choose the best tree depth based on validation performance.
+# Depth=5 provided a good balance between training and test accuracy.
+# Deeper trees improved training accuracy but increased the risk of overfitting.
+
+
 # As tree depth increases, training accuracy continues increasing,
 # but test accuracy eventually stops improving or decreases.
 # This shows that deeper trees can memorize training data and overfit.
@@ -397,6 +402,16 @@ rf_importance = rf_importance.sort_values(
 print("\nTop 10 Random Forest Features:")
 print(rf_importance.head(10))
 
+# The Random Forest top features show which email characteristics contribute
+# most to spam classification. Features related to word frequency, special
+# characters, and capitalization patterns are important because spam emails
+# often use different writing and formatting patterns compared with legitimate
+# emails.
+
+# The Decision Tree and Random Forest feature rankings help identify similar
+# important predictors, although Random Forest provides more stable importance
+# estimates because it combines many trees.
+
 
 # Plot top 10 Random Forest feature importances
 
@@ -464,6 +479,16 @@ y_pred_logreg_pca = logreg_pca.predict(X_test_pca)
 
 print("Logistic Regression PCA Accuracy:")
 print(accuracy_score(y_test, y_pred_logreg_pca))
+
+logreg_pca_accuracy = accuracy_score(
+    y_test,
+    y_pred_logreg_pca
+)
+
+save_result(
+    "Logistic Regression PCA",
+    logreg_pca_accuracy
+)
 
 print(classification_report(y_test, y_pred_logreg_pca))
 
@@ -548,6 +573,7 @@ scores = cross_val_score(
 )
 
 print("KNN (Unscaled)")
+print("Fold scores:", scores)
 print("Mean:", scores.mean())
 print("Std:", scores.std())
 
@@ -570,6 +596,7 @@ scores = cross_val_score(
 )
 
 print("KNN (Scaled)")
+print("Fold scores:", scores)
 print("Mean:", scores.mean())
 print("Std:", scores.std())
 
@@ -592,11 +619,12 @@ scores = cross_val_score(
 )
 
 print("KNN (PCA)")
+print("Fold scores:", scores)
 print("Mean:", scores.mean())
 print("Std:", scores.std())
 
 cv_results.append({
-    "Model": "KNN(PCA)",
+    "Model": "KNN (PCA)",
     "Mean Accuracy": scores.mean(),
     "Std Accuracy": scores.std()
 })
@@ -618,6 +646,7 @@ scores = cross_val_score(
 )
 
 print("Decision Tree")
+print("Fold scores:", scores)
 print("Mean:", scores.mean())
 print("Std:", scores.std())
 
@@ -641,6 +670,7 @@ scores = cross_val_score(
 )
 
 print("Random Forest")
+print("Fold scores:", scores)
 print("Mean:", scores.mean())
 print("Std:", scores.std())
 
@@ -668,6 +698,7 @@ scores = cross_val_score(
 )
 
 print("Logistic Regression (Scaled)")
+print("Fold scores:", scores)
 print("Mean:", scores.mean())
 print("Std:", scores.std())
 
@@ -695,6 +726,7 @@ scores = cross_val_score(
 )
 
 print("Logistic Regression (PCA)")
+print("Fold scores:", scores)
 print("Mean:", scores.mean())
 print("Std:", scores.std())
 
@@ -716,6 +748,11 @@ print(
     )
 )
 
+# Five-fold cross-validation was used for all classifiers.
+# The comparison includes mean accuracy and standard deviation across folds.
+# Random Forest achieved the highest average accuracy, while models with lower
+# standard deviation showed more consistent performance across different splits.
+
 # Cross-validation confirmed the ranking observed in the test-set comparison.
 # Random Forest achieved the highest mean accuracy and showed consistent
 # performance across the five folds, making it the strongest classifier for
@@ -736,6 +773,7 @@ print(
 # Overall, Random Forest provided the best combination of accuracy, stability,
 # and ability to capture complex patterns in the Spambase dataset.
 
+# task5
 # My pipelines
 
 from sklearn.pipeline import Pipeline
@@ -775,10 +813,19 @@ y_pred_log = logreg_pipeline.predict(X_test)
 print("Logistic Regression Pipeline")
 print(classification_report(y_test, y_pred_log))
 
+
+# The pipeline preserves the PCA preprocessing sequence from Task 2:
+# 1. StandardScaler is fitted only on X_train.
+# 2. PCA is fitted on the scaled training data.
+# 3. The same scaler and PCA transformation are applied to X_test.
+# This prevents data leakage and keeps preprocessing consistent.
+# The pipeline preserves the same preprocessing order used during PCA analysis:
+# StandardScaler is fitted on the training data first, then PCA is fitted on
+# the scaled training data. The test data follows the same transformations
+# automatically during prediction.
 # The Random Forest pipeline does not include scaling or PCA because tree-based
 # models do not depend on feature distance and are not sensitive to feature
 # magnitude.
-#
 # The Logistic Regression pipeline includes StandardScaler and PCA because
 # logistic regression benefits from normalized features and PCA can reduce
 # dimensionality while preserving most of the information in the dataset.
