@@ -262,28 +262,35 @@ def run_chatbot():
 
             improved_bullets = rewrite_bullets(raw_bullets)
 
-            messages.append(
-                {
-                    "role": "user",
-                    "content": "Please rewrite these resume bullet points:\n"
-                    + "\n".join(raw_bullets)
-                }
-            )
+            if improved_bullets:
+                messages.append(
+                    {
+                        "role": "user",
+                        "content": "Please rewrite these resume bullet points:\n"
+                        + "\n".join(raw_bullets)
+                    }
+                )
 
-            messages.append(
-                {
-                    "role": "assistant",
-                    "content": "\n".join(
-                        bullet["improved"] for bullet in improved_bullets
-                    )
-                }
-            )
+                messages.append(
+                    {
+                        "role": "assistant",
+                        "content": "\n".join(
+                            bullet["improved"] for bullet in improved_bullets
+                        )
+                    }
+                )
 
-            print("\nImproved Resume Bullets:")
-            for bullet in improved_bullets:
-                print(f"- {bullet['improved']}")
-            print()
+                print("\nImproved Resume Bullets:")
+                for bullet in improved_bullets:
+                    print(f"- {bullet['improved']}")
+                print()
 
+            else:
+                print(
+                    "\nJob Application Helper: "
+                    "I could not rewrite the bullets because the response was not valid JSON.\n"
+                )
+                
         # 6. Generate a cover letter opening
         elif "cover letter" in user_input.lower():
             job_title = input("Job Application Helper: What is the job title? ").strip()
@@ -335,19 +342,21 @@ if __name__ == "__main__":
 # ----Task 6: Ethics Reflection----
 
 # Format chosen: Option A
-
+#
 # 1. AI-generated job advice can contain bias because the model learns from existing
 # text that may represent certain industries, communication styles, or cultural
 # backgrounds more than others. It may favor traditional corporate language or
 # common career paths and may not always fit every person's experience or field.
-# Human review is needed to make sure the advice is fair and personalized.
+# Human review is needed to make sure the advice is fair, personalized, and
+# appropriate for the individual job seeker.
+#
 # A useful guardrail is requiring users to verify that AI suggestions match their
-# actual skills, experiences, and goals before using them in applications.
-
+# actual skills, experiences, and goals before using them in applications. Another
+# important guardrail is treating AI as a support tool rather than allowing it to
+# make final decisions about a person's qualifications or career direction.
+#
 # 2. A job-seeker should not submit AI-generated content without reviewing it because
 # it could include inaccurate information, exaggerated skills, or statements that do
 # not match their actual experience. The output may also sound generic or unlike the
 # candidate's own voice. Reviewing and editing helps ensure the application is
 # accurate, authentic, and appropriate for the employer.
-# Another guardrail is using AI as a writing assistant rather than allowing it to
-# make final decisions about a person's qualifications or career choices.

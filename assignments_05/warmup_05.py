@@ -394,7 +394,11 @@ print()
 # which part is the task the model should follow.
 
 # ----Local Models with Ollama----
+
 # Ollama Question 1
+
+# Terminal command used:
+# ollama run qwen3:0.6b
 
 response = client.chat.completions.create(
     model="gpt-4o-mini",
@@ -417,3 +421,15 @@ to understand and generate human-like language. It can comprehend context
 and learn from vast datasets, enabling it to perform tasks like writing
 or answering questions with accuracy.
 """
+
+# Differences:
+# The OpenAI response was more concise and polished, while the Ollama
+# response was slightly more general.
+
+# Advantage of running a model locally:
+# It improves privacy because data stays on your computer and can work
+# without an internet connection.
+
+# Disadvantage of running a model locally:
+# Local models often require more computing resources and may produce
+# lower-quality responses than larger cloud-hosted models.
