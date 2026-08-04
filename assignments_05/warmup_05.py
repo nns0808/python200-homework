@@ -387,15 +387,23 @@ response_2 = client.chat.completions.create(
 )
 
 print("\nNon-instruction text response:")
-print(response_2.choices[0].message.content)
+non_instruction_response = response_2.choices[0].message.content.strip()
+print(non_instruction_response)
+
+if non_instruction_response == "No steps provided.":
+    print("Check passed: The model returned the expected response.")
+else:
+    print("Check failed: The model did not return exactly 'No steps provided.'")
+
 print()
+
 # Delimiters help prevent confusion between the instructions and the user-provided
 # text. They make it clear which part of the prompt is the data to analyze and
 # which part is the task the model should follow.
 
 # ----Local Models with Ollama----
 
-# Ollama Question 1
+# Warmup Q13: Ollama Comparison
 
 # Terminal command used:
 # ollama run qwen3:0.6b
@@ -423,8 +431,11 @@ or answering questions with accuracy.
 """
 
 # Differences:
-# The OpenAI response was more concise and polished, while the Ollama
-# response was slightly more general.
+# Both OpenAI and Ollama correctly explained what a large language model is.
+# The OpenAI response was more concise and polished, while the Ollama response
+# used slightly more general wording and provided a broader explanation.
+# The level of detail was similar, but the writing style differed: OpenAI gave
+# a more direct explanation, while Ollama provided a more descriptive overview.
 
 # Advantage of running a model locally:
 # It improves privacy because data stays on your computer and can work

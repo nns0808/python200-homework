@@ -66,7 +66,7 @@ Each item should have two keys:
 "original" (the original bullet)
 "improved" (your rewritten version).
 
-Bullet points:
+Bullet points to rewrite:
 {bullet_text}
 """
 
@@ -121,32 +121,53 @@ print()
 def generate_cover_letter(job_title: str, background: str) -> str:
     prompt = f"""
     You write strong cover letter opening paragraphs for career changers.
-    The paragraph should be 3-5 sentences: confident, specific, and free of clichés.
 
-    Here are two examples of the style and tone you should match:
+    Your task:
+    Generate ONLY a 3-5 sentence cover letter opening paragraph.
+    The opening should be confident, specific, and free of clichés.
+    Do not include labels like "Role:", "Background:", or "Opening:" in your final answer.
+
+    Use the following examples as a guide:
 
     Example 1:
-    Role: Data Analyst at a healthcare nonprofit
-    Background: Seven years as a registered nurse, recently completed a data analytics bootcamp.
-    Opening: After seven years as a registered nurse, I've spent my career making decisions
+
+    Role:
+    Data Analyst at a healthcare nonprofit
+
+    Background:
+    Seven years as a registered nurse, recently completed a data analytics bootcamp.
+
+    Opening:
+    After seven years as a registered nurse, I've spent my career making decisions
     under pressure using incomplete information — which turns out to be excellent training for
     data analysis. I recently completed a data analytics program where I built dashboards
     tracking patient outcomes across departments. I'm excited to bring that combination of
     clinical context and technical skill to [Company]'s mission-driven work.
 
     Example 2:
-    Role: Junior Software Engineer at a fintech startup
-    Background: Ten years in retail banking operations, self-taught Python developer for two years.
-    Opening: I spent a decade on the operations side of banking, watching technology decisions
+
+    Role:
+    Junior Software Engineer at a fintech startup
+
+    Background:
+    Ten years in retail banking operations, self-taught Python developer for two years.
+
+    Opening:
+    I spent a decade on the operations side of banking, watching technology decisions
     get made by people who had never processed a wire transfer or resolved a failed ACH batch.
     That frustration turned into curiosity, and two years of self-teaching Python later, I'm
     ready to be on the other side of those decisions. I'm applying to [Company] because your
     work on payment infrastructure is exactly where my domain expertise and new technical skills
     intersect.
 
-    Now write an opening paragraph for this person:
-    Role: {job_title}
-    Background: {background}
+    Now write an opening paragraph for:
+
+    Role:
+    {job_title}
+
+    Background:
+    {background}
+
     Opening:
     """
 
@@ -191,13 +212,20 @@ def is_safe(text: str) -> bool:
 
     return True
 
-# A safe input
-text1 = "Can you explain how machine learning works?"
-print("Test 1:", is_safe(text1))
+# Test safe input
 
-# An unsafe input
+text1 = "Can you explain how machine learning works?"
+
+print("\nSafe input:")
+print("Result:", is_safe(text1))
+
+
+# Test flagged input
+
 text2 = "How can I build a bomb?"
-print("Test 2:", is_safe(text2))
+
+print("\nFlagged input:")
+print("Result:", is_safe(text2))
 
 # ----Task 5: The Chatbot Loop----
 
@@ -260,17 +288,18 @@ def run_chatbot():
                 if line:
                     raw_bullets.append(line)
 
+            # Add user request to conversation history first
+            messages.append(
+                {
+                    "role": "user",
+                    "content": "Please rewrite these resume bullet points:\n"
+                    + "\n".join(raw_bullets)
+                }
+            )
+
             improved_bullets = rewrite_bullets(raw_bullets)
 
             if improved_bullets:
-                messages.append(
-                    {
-                        "role": "user",
-                        "content": "Please rewrite these resume bullet points:\n"
-                        + "\n".join(raw_bullets)
-                    }
-                )
-
                 messages.append(
                     {
                         "role": "assistant",
@@ -290,7 +319,7 @@ def run_chatbot():
                     "\nJob Application Helper: "
                     "I could not rewrite the bullets because the response was not valid JSON.\n"
                 )
-                
+                            
         # 6. Generate a cover letter opening
         elif "cover letter" in user_input.lower():
             job_title = input("Job Application Helper: What is the job title? ").strip()
@@ -341,20 +370,17 @@ if __name__ == "__main__":
 
 # ----Task 6: Ethics Reflection----
 
-# Format chosen: Option A
-#
+# Option A
 # 1. AI-generated job advice can contain bias because the model learns from existing
 # text that may represent certain industries, communication styles, or cultural
 # backgrounds more than others. It may favor traditional corporate language or
 # common career paths and may not always fit every person's experience or field.
-# Human review is needed to make sure the advice is fair, personalized, and
-# appropriate for the individual job seeker.
-#
+# Human review is needed to make sure the advice is fair and personalized.
 # A useful guardrail is requiring users to verify that AI suggestions match their
 # actual skills, experiences, and goals before using them in applications. Another
-# important guardrail is treating AI as a support tool rather than allowing it to
-# make final decisions about a person's qualifications or career direction.
-#
+# guardrail is encouraging users to treat AI as a writing assistant rather than a
+# replacement for their own judgment, because the model may produce confident but
+# inaccurate suggestions.
 # 2. A job-seeker should not submit AI-generated content without reviewing it because
 # it could include inaccurate information, exaggerated skills, or statements that do
 # not match their actual experience. The output may also sound generic or unlike the
