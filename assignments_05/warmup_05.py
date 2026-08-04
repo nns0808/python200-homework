@@ -120,7 +120,6 @@ print()
 # it can use any information provided in the messages list as context to generate its response.
 
 # ----Prompt Engineering----
-# Prompt Question 1 — Zero-Shot
 
 # Prompt Question 1 — Zero-Shot
 
@@ -137,12 +136,11 @@ for i, review in enumerate(reviews, start=1):
             {
                 "role": "user",
                 "content": f"""
-Task:
-Classify the sentiment of the review below as exactly one of:
-positive, negative, or mixed.
+Classify the sentiment of the following review as positive, negative, or mixed.
 
 Review:
 {review}
+
 
 Output format:
 Sentiment: <positive/negative/mixed>
@@ -396,7 +394,6 @@ print()
 # which part is the task the model should follow.
 
 # ----Local Models with Ollama----
-
 # Ollama Question 1
 
 response = client.chat.completions.create(
@@ -412,6 +409,11 @@ response = client.chat.completions.create(
 print("\nOpenAI Response:")
 print(response.choices[0].message.content)
 
-# Ollama output: A large language model is an AI system trained on massive amounts of text to understand and generate human-like
-# language. It can comprehend context and learn from vast datasets, enabling it to perform tasks like writing or
-# answering questions with accuracy.
+"""
+Ollama output:
+
+A large language model is an AI system trained on massive amounts of text
+to understand and generate human-like language. It can comprehend context
+and learn from vast datasets, enabling it to perform tasks like writing
+or answering questions with accuracy.
+"""

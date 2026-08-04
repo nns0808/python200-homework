@@ -81,16 +81,23 @@ Bullet points:
 
     response = response.replace("```json", "").replace("```", "").strip()
 
-    rewritten = json.loads(response)
+    try:
+        rewritten = json.loads(response)
 
-    print("\nRewritten Resume Bullets:\n")
+        print("\nRewritten Resume Bullets:\n")
 
-    for item in rewritten:
-        print(f"Original: {item['original']}")
-        print(f"Improved: {item['improved']}")
-        print()
+        for item in rewritten:
+            print(f"Original: {item['original']}")
+            print(f"Improved: {item['improved']}")
+            print()
 
-    return rewritten
+        return rewritten
+
+    except json.JSONDecodeError:
+        print("\nThe response was not valid JSON.")
+        print("Raw response:")
+        print(response)
+        return []
 
 
 bullets = [
@@ -255,6 +262,23 @@ def run_chatbot():
 
             improved_bullets = rewrite_bullets(raw_bullets)
 
+            messages.append(
+                {
+                    "role": "user",
+                    "content": "Please rewrite these resume bullet points:\n"
+                    + "\n".join(raw_bullets)
+                }
+            )
+
+            messages.append(
+                {
+                    "role": "assistant",
+                    "content": "\n".join(
+                        bullet["improved"] for bullet in improved_bullets
+                    )
+                }
+            )
+
             print("\nImproved Resume Bullets:")
             for bullet in improved_bullets:
                 print(f"- {bullet['improved']}")
@@ -266,6 +290,24 @@ def run_chatbot():
             background = input("Job Application Helper: Briefly describe your background: ").strip()
 
             opening = generate_cover_letter(job_title, background)
+
+            messages.append(
+                {
+                    "role": "user",
+                    "content": (
+                        f"Write a cover letter opening.\n"
+                        f"Job title: {job_title}\n"
+                        f"Background: {background}"
+                    )
+                }
+            )
+
+            messages.append(
+                {
+                    "role": "assistant",
+                    "content": opening
+                }
+            )
 
             print("\nCover Letter Opening:\n")
             print(opening)
@@ -291,6 +333,8 @@ if __name__ == "__main__":
 
 
 # ----Task 6: Ethics Reflection----
+
+# Format chosen: Option A
 
 # 1. AI-generated job advice can contain bias because the model learns from existing
 # text that may represent certain industries, communication styles, or cultural
