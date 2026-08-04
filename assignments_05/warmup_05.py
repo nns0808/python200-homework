@@ -216,24 +216,25 @@ for i, review in enumerate(reviews, start=1):
         messages=[
             {
                 "role": "user",
-                "content": """
+                "content": f"""
 Classify the sentiment of the following review as positive, negative, or mixed.
 
-Example:
+Examples:
+
 Review: "Fast shipping but the item arrived damaged."
 Sentiment: mixed
-Example:
+
 Review: "Fast shipping and the item arrived safely."
 Sentiment: positive
-Example:
+
 Review: "The product broke immediately and customer service was unhelpful."
 Sentiment: negative
+
 Now classify this review:
+
+Review: {review}
+Sentiment:
 """
-            },
-            {
-                "role": "user",
-                "content": f"Review: {review}"
             }
         ]
     )
@@ -268,10 +269,11 @@ print("\nResponse:")
 print(response.choices[0].message.content)
 print()
 
-# Asking the model to reason step by step encourages it to break the problem
-# into smaller parts, check each calculation, and reduce the chance of making
-# mistakes. It helps the model follow a structured process instead of jumping
-# directly to an answer.
+# Chain-of-thought prompting can improve accuracy because asking the model to
+# work through a problem step by step encourages it to break the task into
+# smaller parts, check calculations, and reduce mistakes before producing
+# the final answer. It helps the model follow a structured reasoning process
+# instead of immediately guessing an answer.
 
 # Prompt Question 5 — Structured Output
 import json

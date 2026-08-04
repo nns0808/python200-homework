@@ -72,12 +72,7 @@ Bullet points to rewrite:
 
     messages = [{"role": "user", "content": prompt}]
 
-    print(prompt)
-
     response = get_completion(messages)
-
-    print("MODEL RESPONSE:")
-    print(response)
 
     response = response.replace("```json", "").replace("```", "").strip()
 
@@ -288,24 +283,29 @@ def run_chatbot():
                 if line:
                     raw_bullets.append(line)
 
-            # Add user request to conversation history first
+            # Add user request to conversation history
             messages.append(
                 {
                     "role": "user",
-                    "content": "Please rewrite these resume bullet points:\n"
-                    + "\n".join(raw_bullets)
+                    "content": (
+                        "Please rewrite these resume bullet points:\n"
+                        + "\n".join(raw_bullets)
+                    )
                 }
             )
 
             improved_bullets = rewrite_bullets(raw_bullets)
 
             if improved_bullets:
+
+                assistant_response = "\n".join(
+                    bullet["improved"] for bullet in improved_bullets
+                )
+
                 messages.append(
                     {
                         "role": "assistant",
-                        "content": "\n".join(
-                            bullet["improved"] for bullet in improved_bullets
-                        )
+                        "content": assistant_response
                     }
                 )
 
@@ -325,8 +325,6 @@ def run_chatbot():
             job_title = input("Job Application Helper: What is the job title? ").strip()
             background = input("Job Application Helper: Briefly describe your background: ").strip()
 
-            opening = generate_cover_letter(job_title, background)
-
             messages.append(
                 {
                     "role": "user",
@@ -337,6 +335,8 @@ def run_chatbot():
                     )
                 }
             )
+
+            opening = generate_cover_letter(job_title, background)
 
             messages.append(
                 {
@@ -370,19 +370,22 @@ if __name__ == "__main__":
 
 # ----Task 6: Ethics Reflection----
 
-# Option A
-# 1. AI-generated job advice can contain bias because the model learns from existing
+# Chosen format: Option A
+
+# Question 1:
+# AI-generated job advice can contain bias because the model learns from existing
 # text that may represent certain industries, communication styles, or cultural
 # backgrounds more than others. It may favor traditional corporate language or
 # common career paths and may not always fit every person's experience or field.
 # Human review is needed to make sure the advice is fair and personalized.
+#
 # A useful guardrail is requiring users to verify that AI suggestions match their
 # actual skills, experiences, and goals before using them in applications. Another
 # guardrail is encouraging users to treat AI as a writing assistant rather than a
-# replacement for their own judgment, because the model may produce confident but
-# inaccurate suggestions.
-# 2. A job-seeker should not submit AI-generated content without reviewing it because
-# it could include inaccurate information, exaggerated skills, or statements that do
-# not match their actual experience. The output may also sound generic or unlike the
-# candidate's own voice. Reviewing and editing helps ensure the application is
-# accurate, authentic, and appropriate for the employer.
+# replacement for their own judgment.
+#
+# Question 2:
+# A job-seeker should not submit AI-generated content without reviewing it because
+# it could include inaccurate information, exaggerated skills, or statements that
+# do not match their actual experience. Reviewing and editing helps ensure the
+# application is accurate, authentic, and appropriate for the employer.
