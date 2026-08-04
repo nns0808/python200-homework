@@ -49,33 +49,31 @@ print(response)
 # ----Task 2: Bullet Point Rewriter----
 
 def rewrite_bullets(bullets: list[str]) -> list[dict]:
-    
+
     bullet_text = "\n".join(f"- {b}" for b in bullets)
 
     prompt = f"""
-    You are a professional resume coach helping a career changer.
-    Rewrite each resume bullet point below to be more specific, results-oriented, and compelling.
-    Use strong action verbs. Do not invent facts that aren't implied by the original.
+You are a professional resume coach helping a career changer.
 
-    Return ONLY a valid JSON list. Each item should have two keys:
-    "original" (the original bullet) and "improved" (your rewritten version).
+Rewrite each resume bullet point below to be more specific,
+results-oriented, and compelling.
 
-    Bullet points:
-    
-   ```text
+Use strong action verbs.
+Do not invent facts that aren't implied by the original.
+
+Return ONLY a valid JSON list.
+Each item should have two keys:
+"original" (the original bullet)
+"improved" (your rewritten version).
+
 Bullet points:
-```
-- Helped customers with their problems
-- Made reports for the management team
-- Worked with a team to finish the project on time
-```
-```
-    
-    """
+{bullet_text}
+"""
 
     messages = [{"role": "user", "content": prompt}]
 
-    print(prompt) 
+    print(prompt)
+
     response = get_completion(messages)
 
     print("MODEL RESPONSE:")
@@ -93,6 +91,7 @@ Bullet points:
         print()
 
     return rewritten
+
 
 bullets = [
     "Helped customers with their problems",
@@ -298,9 +297,13 @@ if __name__ == "__main__":
 # backgrounds more than others. It may favor traditional corporate language or
 # common career paths and may not always fit every person's experience or field.
 # Human review is needed to make sure the advice is fair and personalized.
-#
+# A useful guardrail is requiring users to verify that AI suggestions match their
+# actual skills, experiences, and goals before using them in applications.
+
 # 2. A job-seeker should not submit AI-generated content without reviewing it because
 # it could include inaccurate information, exaggerated skills, or statements that do
 # not match their actual experience. The output may also sound generic or unlike the
 # candidate's own voice. Reviewing and editing helps ensure the application is
 # accurate, authentic, and appropriate for the employer.
+# Another guardrail is using AI as a writing assistant rather than allowing it to
+# make final decisions about a person's qualifications or career choices.

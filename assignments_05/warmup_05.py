@@ -1,5 +1,5 @@
 # --- Completions API --- 
-# Q1
+# API Q1
 
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -23,7 +23,7 @@ print(response.model)
 print("\nTotal Tokens:")
 print(response.usage.total_tokens)
 
-# Q2
+# API Q2
 
 prompt = "Suggest a creative name for a data engineering consultancy."
 temperatures = [0, 0.7, 1.5]
@@ -45,7 +45,7 @@ for temp in temperatures:
 # Higher temperatures (1.5) produce more creative and diverse responses.
 # I would use temperature = 0 if I needed a consistent, reproducible output.
 
-# Q3
+# API Q3
 
 response = client.chat.completions.create(
     model="gpt-4o-mini",
@@ -56,11 +56,10 @@ response = client.chat.completions.create(
 # Print all three completions
 for i, choice in enumerate(response.choices, start=1):
     print(f"\nResponse {i}:")
-    print(response.choices[0].message.content)
+    print(choice.message.content)
 
-    # Q4
+# API Q4
 
-   # API Question 4
 
 response = client.chat.completions.create(
     model="gpt-4o-mini",
@@ -76,7 +75,7 @@ print(response.choices[0].message.content)
 # the explanation is complete.
 
 # ----System Messages and Personas----
-# Q1
+# System Question 1
 response = client.chat.completions.create(
     model="gpt-4o-mini",
     messages = [
@@ -101,7 +100,8 @@ print(response.choices[0].message.content)
 # The explanation is still correct, but the model's personality,
 # tone, and style became strict and grumpy instead of patient and encouraging.
 
-# Q2
+# System Question 2
+
 response = client.chat.completions.create(
     model="gpt-4o-mini",
     messages = [
@@ -120,7 +120,9 @@ print()
 # it can use any information provided in the messages list as context to generate its response.
 
 # ----Prompt Engineering----
-# Q1
+# Prompt Question 1 — Zero-Shot
+
+# Prompt Question 1 — Zero-Shot
 
 reviews = [
     "The onboarding process was smooth and the team was welcoming.",
@@ -134,11 +136,17 @@ for i, review in enumerate(reviews, start=1):
         messages=[
             {
                 "role": "user",
-                "content": "Classify the sentiment of the following review as positive, negative, or mixed."
-            },
-            {
-                "role": "user",
-                "content": f"Review: {review}"
+                "content": f"""
+Task:
+Classify the sentiment of the review below as exactly one of:
+positive, negative, or mixed.
+
+Review:
+{review}
+
+Output format:
+Sentiment: <positive/negative/mixed>
+"""
             }
         ]
     )
@@ -147,9 +155,9 @@ for i, review in enumerate(reviews, start=1):
     print(response.choices[0].message.content)
     print()
 
-    # Q2
+# Prompt Question 2 — One-Shot
 
-    reviews = [
+reviews = [
     "The onboarding process was smooth and the team was welcoming.",
     "The software crashes constantly and support never responds.",
     "Great price, but the documentation is nearly impossible to follow."
@@ -161,19 +169,27 @@ for i, review in enumerate(reviews, start=1):
         messages=[
             {
                 "role": "user",
-                "content": """
-Classify the sentiment of the following review as positive, negative, or mixed.
+                "content": f"""
+Task:
+Classify the sentiment of the review below as exactly one of:
+positive, negative, or mixed.
 
 Example:
-Review: "Fast shipping but the item arrived damaged."
+
+Review:
+"Fast shipping but the item arrived damaged."
+
+Output:
 Sentiment: mixed
 
 Now classify this review:
+
+Review:
+{review}
+
+Output:
+Sentiment:
 """
-            },
-            {
-                "role": "user",
-                "content": f"Review: {review}"
             }
         ]
     )
@@ -183,11 +199,12 @@ Now classify this review:
     print()
 
 # Adding one example improved the consistency of the output format.
-# In Q1 (zero-shot), the model returned more detailed explanations,
-# while in Q2 (one-shot), it followed the example format more closely
-# by returning "Sentiment: positive/negative/mixed" labels.
+# In Q1 (zero-shot), the model received only instructions and produced
+# classifications without an example.
+# In Q2 (one-shot), the example showed the expected format, so the model
+# followed the "Sentiment: label" structure more consistently.
 
-# Q3
+# Prompt Question 3 — Few-Shot
 
 reviews = [
     "The onboarding process was smooth and the team was welcoming.",
@@ -237,7 +254,7 @@ Now classify this review:
 # consistent formatting and accuracy. Multiple examples help the model better
 # understand the desired pattern.
 
-# Q4
+# Prompt Question 4 — Chain of Thought
 
 response = client.chat.completions.create(
     model="gpt-4o-mini",
@@ -258,8 +275,7 @@ print()
 # mistakes. It helps the model follow a structured process instead of jumping
 # directly to an answer.
 
-# Q5
-
+# Prompt Question 5 — Structured Output
 import json
 
 review = "I've been using this tool for three months. It handles large datasets well, but the UI is clunky and the export options are limited."
@@ -270,12 +286,24 @@ response = client.chat.completions.create(
         {
             "role": "user",
             "content": f"""
-Analyze the following review and return the result only as valid JSON.
+Analyze the review below.
 
-The JSON must contain exactly these keys:
-- sentiment: positive, negative, or mixed
-- confidence: a float between 0 and 1
-- reason: one sentence explaining the sentiment
+Return ONLY valid JSON.
+Do not include markdown, code fences, explanations, or extra text.
+
+The JSON object must contain exactly these three keys:
+
+{{
+  "sentiment": "positive | negative | mixed",
+  "confidence": 0.0,
+  "reason": "one sentence explaining the sentiment"
+}}
+
+Rules:
+- sentiment must be exactly one of: positive, negative, mixed
+- confidence must be a number between 0 and 1
+- reason must be exactly one sentence
+- Use double quotes for all JSON keys and string values
 
 Review:
 {review}
@@ -305,7 +333,8 @@ except json.JSONDecodeError:
 # in programs. The try/except block helps handle cases where the model does
 # not return valid JSON, allowing us to debug the raw response.
 
-# Q6
+# Prompt Question 6 — Delimiters
+
 user_text = (
     "First boil a pot of water. Once boiling, add a handful of salt and the "
     "pasta. Cook for 8-10 minutes until al dente. Drain and toss with your "
@@ -368,7 +397,8 @@ print()
 
 # ----Local Models with Ollama----
 
-# Q1
+# Ollama Question 1
+
 response = client.chat.completions.create(
     model="gpt-4o-mini",
     messages=[
@@ -385,15 +415,3 @@ print(response.choices[0].message.content)
 # Ollama output: A large language model is an AI system trained on massive amounts of text to understand and generate human-like
 # language. It can comprehend context and learn from vast datasets, enabling it to perform tasks like writing or
 # answering questions with accuracy.
-
-# The OpenAI and Ollama (Qwen) responses both correctly explained what a
-# large language model is, but they used different wording. The OpenAI
-# response mentioned neural networks and how the model generates text,
-# while the Ollama response focused more on understanding context and
-# learning from large datasets.
-#
-# One advantage of running a model locally is that it works without sending
-# data to an external service, which can improve privacy and reduce API costs.
-# One disadvantage is that local models may require significant disk space
-# and computing resources, and smaller local models may not perform as well
-# as larger cloud-hosted models.
