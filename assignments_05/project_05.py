@@ -66,8 +66,9 @@ Each item should have two keys:
 "original" (the original bullet)
 "improved" (your rewritten version).
 
-Bullet points to rewrite:
+--- BULLET POINTS START ---
 {bullet_text}
+--- BULLET POINTS END ---
 """
 
     messages = [{"role": "user", "content": prompt}]

@@ -71,8 +71,14 @@ print("Response:")
 print(response.choices[0].message.content)
 
 # max_tokens limits the length of the model's response.
-# A small max_tokens value can cause the response to be cut off before
-# the explanation is complete.
+#
+# The response was cut off because max_tokens=15 only allowed the model to
+# generate a small number of tokens. A small max_tokens value can cause a
+# response to end before the explanation is complete.
+#
+# In a real application, max_tokens is useful for controlling response length,
+# reducing costs, improving response speed, and preventing unnecessarily long
+# outputs.
 
 # ----System Messages and Personas----
 # System Question 1
@@ -288,8 +294,8 @@ response = client.chat.completions.create(
             "content": f"""
 Analyze the review below.
 
-Return ONLY valid JSON.
-Do not include markdown, code fences, explanations, or extra text.
+Return ONLY a valid JSON object.
+Do not include markdown, code fences, explanations, or any text before or after the JSON.
 
 The JSON object must contain exactly these three keys:
 
@@ -359,7 +365,7 @@ response = client.chat.completions.create(
     ]
 )
 
-print("Instruction text response:")
+print("=== Test 1: Instruction Text ===")
 print(response.choices[0].message.content)
 
 
@@ -388,7 +394,7 @@ response_2 = client.chat.completions.create(
     ]
 )
 
-print("\nNon-instruction text response:")
+print("=== Test 2: Non-Instruction Text ===")
 non_instruction_response = response_2.choices[0].message.content.strip()
 print(non_instruction_response)
 
@@ -425,19 +431,21 @@ openai_response = response.choices[0].message.content
 print(openai_response)
 
 """
-Ollama terminal session
 
-Command:
-ollama run qwen3:0.6b
+Ollama terminal output:
 
-Prompt:
-Explain what a large language model is in two sentences.
+Thinking...
+Okay, the user is asking for an explanation of a large language model in two sentences. Let me start by recalling
+what I know. Large language models are AI systems trained on vast amounts of text to understand and generate
+human-like language. They can understand context and learn from vast datasets. I need to make sure each sentence
+is clear and concise. Also, check if there's any technical jargon that needs to be simplified. Avoid any markdown
+and keep the sentences natural.
+...done thinking.
 
-Output:
-A large language model is an AI system trained on massive amounts of text to
-understand and generate human-like language. It can comprehend context and
-learn from vast datasets, enabling it to perform tasks like writing or
+A large language model is an AI system trained on massive amounts of text to understand and generate human-like
+language. It can comprehend context and learn from vast datasets, enabling it to perform tasks like writing or
 answering questions with accuracy.
+
 """
 
 # Differences:
