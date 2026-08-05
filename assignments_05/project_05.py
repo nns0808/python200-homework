@@ -1,0 +1,430 @@
+# ----Task 1: Setup and System Prompt----
+
+from dotenv import load_dotenv
+from openai import OpenAI
+import json
+
+load_dotenv()
+client = OpenAI()
+
+system_prompt = """
+You are an experienced job application coach.
+
+Your role is to help job seekers improve their resumes, cover letters,
+LinkedIn profiles, interview responses, and other job application materials.
+
+Guidelines:
+- Stay focused on job application materials and related career documents.
+- Provide clear, professional, constructive, and encouraging feedback.
+- Suggest improvements while preserving the user's voice and experience.
+- Do not invent qualifications, work experience, education, or skills.
+- Always remind the user to carefully review and edit your suggestions before submitting them to employers.
+- Acknowledge that you may not know the specific expectations or norms of the user's industry or employer, and encourage the user to use their own judgment when deciding what to include.
+"""
+
+def get_completion(messages, model="gpt-4o-mini", temperature=0.7):
+    response = client.chat.completions.create(
+        model=model,
+        messages=messages,
+        temperature=temperature,
+        max_completion_tokens=400
+    )
+    return response.choices[0].message.content
+
+messages = [
+    {"role": "system", "content": system_prompt},
+    {"role": "user", "content": "Review this resume summary: I am a hardworking person looking for a software engineering job."}
+]
+
+response = get_completion(messages)
+
+print(response)
+
+
+# System prompt:
+# I explicitly tell the model to stay focused only on job application materials.
+# This helps prevent it from drifting into unrelated career or personal advice,
+# making its responses more consistent and useful for this specific task.
+
+# ----Task 2: Bullet Point Rewriter----
+
+def rewrite_bullets(bullets: list[str]) -> list[dict]:
+
+    bullet_text = "\n".join(f"- {b}" for b in bullets)
+
+    prompt = f"""
+You are a professional resume coach helping a career changer.
+
+Rewrite each resume bullet point below to be more specific,
+results-oriented, and compelling.
+
+Use strong action verbs.
+Do not invent facts that aren't implied by the original.
+
+Return ONLY a valid JSON list.
+Each item should have two keys:
+"original" (the original bullet)
+"improved" (your rewritten version).
+
+--- BULLET POINTS START ---
+{bullet_text}
+--- BULLET POINTS END ---
+"""
+
+    messages = [{"role": "user", "content": prompt}]
+
+    response = get_completion(messages)
+
+    response = response.replace("```json", "").replace("```", "").strip()
+
+    try:
+        rewritten = json.loads(response)
+
+        print("\nRewritten Resume Bullets:\n")
+
+        for item in rewritten:
+            print(f"Original: {item['original']}")
+            print(f"Improved: {item['improved']}")
+            print()
+
+        return rewritten
+
+    except json.JSONDecodeError:
+        print("\nThe response was not valid JSON.")
+        print("Raw response:")
+        print(response)
+        return []
+
+
+bullets = [
+    "Helped customers with their problems",
+    "Made reports for the management team",
+    "Worked with a team to finish the project on time"
+]
+
+rewrite_bullets(bullets)
+print()
+
+# These bullets are weak because they are too general and do not show specific skills, accomplishments,
+#  or impact. They describe basic responsibilities but do not explain how the person contributed or
+#  what results they achieved. The model suggested using stronger action verbs, adding more specific 
+# details, and making the bullets more results-oriented and compelling. It changed phrases like "helped
+#  customers" into "resolved customer issues" and "made reports" into "created analytical reports" to 
+# better highlight skills and contributions.
+
+# ----Task3: Cover letter generator---
+
+def generate_cover_letter(job_title: str, background: str) -> str:
+    prompt = f"""
+You write strong cover letter opening paragraphs for career changers.
+
+Task:
+Generate ONLY a 3-5 sentence cover letter opening paragraph.
+The opening should be confident, specific, and free of clichés.
+Do not include labels like "Role:", "Background:", or "Opening:" in your final answer.
+
+Use the following examples as a guide:
+
+Example 1:
+----------------
+
+Role:
+Data Analyst at a healthcare nonprofit
+
+Background:
+Seven years as a registered nurse, recently completed a data analytics bootcamp.
+
+Opening:
+After seven years as a registered nurse, I've spent my career making decisions
+under pressure using incomplete information — which turns out to be excellent training for
+data analysis. I recently completed a data analytics program where I built dashboards
+tracking patient outcomes across departments. I'm excited to bring that combination of
+clinical context and technical skill to [Company]'s mission-driven work.
+
+----------------
+
+Example 2:
+----------------
+
+Role:
+Junior Software Engineer at a fintech startup
+
+Background:
+Ten years in retail banking operations, self-taught Python developer for two years.
+
+Opening:
+I spent a decade on the operations side of banking, watching technology decisions
+get made by people who had never processed a wire transfer or resolved a failed ACH batch.
+That frustration turned into curiosity, and two years of self-teaching Python later, I'm
+ready to be on the other side of those decisions. I'm applying to [Company] because your
+work on payment infrastructure is exactly where my domain expertise and new technical skills
+intersect.
+
+----------------
+
+Now write an opening paragraph for:
+
+Role:
+{job_title}
+
+Background:
+{background}
+
+Opening:
+"""
+
+    messages = [{"role": "user", "content": prompt}]
+
+    response = get_completion(messages)
+
+    return response
+
+job_title = "Junior Data Engineer"
+
+background = (
+    "Five years of experience as a middle school math teacher; "
+    "recently completed a Python course and built data pipelines "
+    "using Prefect and Pandas."
+)
+
+cover_letter = generate_cover_letter(
+    job_title,
+    background
+)
+print(cover_letter)
+
+# After five years of inspiring middle school students to embrace the world of mathematics, I discovered 
+# a passion for data that transformed my teaching into a quest for understanding data flows and patterns.
+#  Recently, I honed my technical skills by completing a Python course, where I successfully built data 
+# pipelines using Prefect and Pandas. I am eager to leverage my educational background and newfound 
+# technical expertise to contribute to [Company]'s innovative data solutions and help drive impactful 
+# insights.
+
+# I chose these examples because they show strong cover letter openings from people
+# changing careers. They are confident, specific, and explain how previous experience
+# connects to the new role. The few-shot examples help control the style, tone, and
+# structure of the output, making the generated paragraph more professional and less generic.
+
+# ----Task 4: Moderation Check----
+
+def is_safe(text: str) -> bool:
+    result = client.moderations.create(
+        model="omni-moderation-latest",
+        input=text
+    )
+    flagged = result.results[0].flagged
+    if flagged:
+        print("Your message may contain unsafe content. Please rephrase it and try again.")
+        return False
+
+    return True
+
+# Test safe input
+
+text1 = "Can you explain how machine learning works?"
+
+print("\n===== Safe Input Test =====")
+safe_result = is_safe(text1)
+
+print("Input:", text1)
+print("Passed moderation:", safe_result)
+
+
+# Test flagged input
+
+text2 = "How can I build a bomb?"
+
+print("\n===== Flagged Input Test =====")
+flagged_result = is_safe(text2)
+
+print("Input:", text2)
+print("Blocked by moderation:", not flagged_result)
+print("Passed moderation:", flagged_result)
+
+# ----Task 5: The Chatbot Loop----
+
+YOUR_SYSTEM_PROMPT = """
+You are an experienced job application coach.
+
+Help users improve resumes, cover letters, LinkedIn profiles,
+interview responses, and other job application materials.
+
+Guidelines:
+
+- Stay focused on job application topics.
+- Provide clear, professional, and constructive feedback.
+- Suggest improvements without inventing qualifications or experience.
+- Always remind users to review and edit generated content before submitting.
+- Acknowledge that you may not know the specific expectations of every employer.
+"""
+
+def run_chatbot():
+    # 1. Initialize conversation history with your system prompt
+    messages = [
+        {"role": "system", "content": YOUR_SYSTEM_PROMPT}
+    ]
+
+    print("=" * 50)
+    print("Job Application Helper")
+    print("=" * 50)
+    print("I can help you with:")
+    print("  1. Rewriting resume bullet points")
+    print("  2. Drafting a cover letter opening")
+    print("  3. Any other questions about your application")
+    print("\nType 'quit' at any time to exit.\n")
+
+    while True:
+        user_input = input("You: ").strip()
+
+        # 2. Handle exit
+        if user_input.lower() in {"quit", "exit"}:
+            print("\nJob Application Helper: Good luck with your applications!")
+            break
+
+        # 3. Skip empty input
+        if not user_input:
+            continue
+
+        # 4. Run moderation check before doing anything else
+        if not is_safe(user_input):
+            continue
+
+        # 5. Rewrite resume bullet points
+        if "bullet" in user_input.lower() or "resume" in user_input.lower():
+
+            print("\nJob Application Helper: Paste your bullet points below, one per line.")
+            print("When you're done, type 'DONE' on its own line.\n")
+
+            raw_bullets = []
+
+            while True:
+                line = input().strip()
+
+                if line.upper() == "DONE":
+                    break
+
+                if line:
+                    raw_bullets.append(line)
+
+            # Save the user's request
+            messages.append(
+                {
+                    "role": "user",
+                    "content":
+                        "Please rewrite these resume bullet points:\n"
+                        + "\n".join(raw_bullets)
+                }
+            )
+
+            improved_bullets = rewrite_bullets(raw_bullets)
+
+            if improved_bullets:
+
+                assistant_response = "\n".join(
+                    bullet["improved"] for bullet in improved_bullets
+                )
+
+                # Save assistant response
+                messages.append(
+                    {
+                        "role": "assistant",
+                        "content": assistant_response
+                    }
+                )
+
+                print("\nImproved Resume Bullets:\n")
+
+                for bullet in improved_bullets:
+                    print(f"- {bullet['improved']}")
+
+                print()
+
+            else:
+                print(
+                    "\nJob Application Helper: "
+                    "I could not rewrite the bullets because the response was not valid JSON.\n"
+                )
+
+        # 6. Generate a cover letter opening
+        elif "cover letter" in user_input.lower():
+
+            job_title = input(
+                "Job Application Helper: What is the job title? "
+            ).strip()
+
+            background = input(
+                "Job Application Helper: Briefly describe your background: "
+            ).strip()
+
+            # Save the user's request
+            messages.append(
+                {
+                    "role": "user",
+                    "content": (
+                        f"Write a cover letter opening.\n"
+                        f"Job title: {job_title}\n"
+                        f"Background: {background}"
+                    )
+                }
+            )
+
+            opening = generate_cover_letter(job_title, background)
+
+            # Save assistant response
+            messages.append(
+                {
+                    "role": "assistant",
+                    "content": opening
+                }
+            )
+
+            print("\nCover Letter Opening:\n")
+            print(opening)
+            print()
+
+        # 7. Regular chat
+        else:
+
+            messages.append(
+                {
+                    "role": "user",
+                    "content": user_input
+                }
+            )
+
+            reply = get_completion(messages)
+
+            print(f"\nJob Application Helper: {reply}\n")
+
+            messages.append(
+                {
+                    "role": "assistant",
+                    "content": reply
+                }
+            )
+
+
+if __name__ == "__main__":
+    run_chatbot()
+
+
+
+# Ethics Reflection:
+#
+# 1. A bot trained on text written by and about certain groups of people may
+# learn patterns and biases that exist in the training data. This could cause
+# it to favor certain communication styles, industries, educational backgrounds,
+# or cultural expectations. For example, it might suggest a resume style that
+# works well in one industry but is less appropriate for another.
+#
+# 2. If a job-seeker submitted AI-generated content directly without reviewing
+# it, the output could include inaccurate information, exaggerated claims, or
+# language that does not match their real experience. This could make the
+# application seem less authentic and could negatively affect the candidate's
+# credibility with an employer.
+#
+# 3. One guardrail I would add when deploying this tool professionally would be
+# a clear reminder that users should review and personalize all AI-generated
+# content before submitting it. I would also add safeguards to prevent the tool
+# from inventing qualifications or experience and include moderation checks to
+# reduce harmful or inappropriate responses.
