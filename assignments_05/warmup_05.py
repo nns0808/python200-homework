@@ -423,32 +423,34 @@ response = client.chat.completions.create(
 print("\nOpenAI Response:")
 openai_response = response.choices[0].message.content
 print(openai_response)
-"""
-Ollama comparison:
 
-Terminal command:
+"""
+Ollama terminal session
+
+Command:
 ollama run qwen3:0.6b
 
 Prompt:
 Explain what a large language model is in two sentences.
 
-Ollama output:
-A large language model is an AI system trained on massive amounts of text
-to understand and generate human-like language. It can comprehend context
-and learn from vast datasets, enabling it to perform tasks like writing
-or answering questions with accuracy.
+Output:
+A large language model is an AI system trained on massive amounts of text to
+understand and generate human-like language. It can comprehend context and
+learn from vast datasets, enabling it to perform tasks like writing or
+answering questions with accuracy.
 """
 
 # Differences:
-# Both OpenAI and Ollama correctly explained what a large language model is.
-# The OpenAI response was more concise and polished, while the Ollama response
-# used slightly more general wording and provided a broader explanation.
-# The level of detail was similar, but the writing style differed: OpenAI gave
-# a more direct explanation, while Ollama provided a more descriptive overview.
+# The OpenAI response explained that LLMs process large amounts of text data
+# and use deep learning neural networks to understand and generate language.
+# The Ollama response focused more on the model being trained on large text
+# datasets and highlighted its practical abilities, such as writing and
+# answering questions. Both responses were accurate but used different wording
+# and emphasis.
 
 # Advantage of running a model locally:
-# It improves privacy because data stays on your computer and can work
-# without an internet connection.
+# Local models improve privacy because data stays on your own computer and
+# they can work without an internet connection.
 
 # Disadvantage of running a model locally:
 # Local models often require more computing resources and may produce

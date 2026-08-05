@@ -115,56 +115,62 @@ print()
 
 def generate_cover_letter(job_title: str, background: str) -> str:
     prompt = f"""
-    You write strong cover letter opening paragraphs for career changers.
+You write strong cover letter opening paragraphs for career changers.
 
-    Your task:
-    Generate ONLY a 3-5 sentence cover letter opening paragraph.
-    The opening should be confident, specific, and free of clichés.
-    Do not include labels like "Role:", "Background:", or "Opening:" in your final answer.
+Task:
+Generate ONLY a 3-5 sentence cover letter opening paragraph.
+The opening should be confident, specific, and free of clichés.
+Do not include labels like "Role:", "Background:", or "Opening:" in your final answer.
 
-    Use the following examples as a guide:
+Use the following examples as a guide:
 
-    Example 1:
+Example 1:
+----------------
 
-    Role:
-    Data Analyst at a healthcare nonprofit
+Role:
+Data Analyst at a healthcare nonprofit
 
-    Background:
-    Seven years as a registered nurse, recently completed a data analytics bootcamp.
+Background:
+Seven years as a registered nurse, recently completed a data analytics bootcamp.
 
-    Opening:
-    After seven years as a registered nurse, I've spent my career making decisions
-    under pressure using incomplete information — which turns out to be excellent training for
-    data analysis. I recently completed a data analytics program where I built dashboards
-    tracking patient outcomes across departments. I'm excited to bring that combination of
-    clinical context and technical skill to [Company]'s mission-driven work.
+Opening:
+After seven years as a registered nurse, I've spent my career making decisions
+under pressure using incomplete information — which turns out to be excellent training for
+data analysis. I recently completed a data analytics program where I built dashboards
+tracking patient outcomes across departments. I'm excited to bring that combination of
+clinical context and technical skill to [Company]'s mission-driven work.
 
-    Example 2:
+----------------
 
-    Role:
-    Junior Software Engineer at a fintech startup
+Example 2:
+----------------
 
-    Background:
-    Ten years in retail banking operations, self-taught Python developer for two years.
+Role:
+Junior Software Engineer at a fintech startup
 
-    Opening:
-    I spent a decade on the operations side of banking, watching technology decisions
-    get made by people who had never processed a wire transfer or resolved a failed ACH batch.
-    That frustration turned into curiosity, and two years of self-teaching Python later, I'm
-    ready to be on the other side of those decisions. I'm applying to [Company] because your
-    work on payment infrastructure is exactly where my domain expertise and new technical skills
-    intersect.
+Background:
+Ten years in retail banking operations, self-taught Python developer for two years.
 
-    Now write an opening paragraph for:
+Opening:
+I spent a decade on the operations side of banking, watching technology decisions
+get made by people who had never processed a wire transfer or resolved a failed ACH batch.
+That frustration turned into curiosity, and two years of self-teaching Python later, I'm
+ready to be on the other side of those decisions. I'm applying to [Company] because your
+work on payment infrastructure is exactly where my domain expertise and new technical skills
+intersect.
 
-    Role:
-    {job_title}
+----------------
 
-    Background:
-    {background}
+Now write an opening paragraph for:
 
-    Opening:
-    """
+Role:
+{job_title}
+
+Background:
+{background}
+
+Opening:
+"""
 
     messages = [{"role": "user", "content": prompt}]
 
@@ -401,21 +407,23 @@ if __name__ == "__main__":
     run_chatbot()
 
 
-# ----Task 6: Ethics Reflection----
 
-# Chosen format: Option A
-
-# Question 1:
-# AI-generated job advice can contain bias because the model is trained on existing
-# resumes, cover letters, and career advice that may overrepresent certain industries,
-# communication styles, or cultural expectations. As a result, it may favor traditional
-# career paths or writing styles that are not appropriate for every job seeker. One
-# useful guardrail is reminding users to verify that all AI-generated content is accurate,
-# reflects their real experience, and is edited before being used in an application.
-
-# Question 2:
-# A job seeker should never submit AI-generated application materials without reviewing
-# them first because the output may contain inaccurate information, exaggerated claims,
-# or wording that does not reflect the person's authentic voice. Careful human review
-# helps ensure the final application is truthful, personalized, and appropriate for the
-# employer's expectations.
+# Ethics Reflection:
+#
+# 1. A bot trained on text written by and about certain groups of people may
+# learn patterns and biases that exist in the training data. This could cause
+# it to favor certain communication styles, industries, educational backgrounds,
+# or cultural expectations. For example, it might suggest a resume style that
+# works well in one industry but is less appropriate for another.
+#
+# 2. If a job-seeker submitted AI-generated content directly without reviewing
+# it, the output could include inaccurate information, exaggerated claims, or
+# language that does not match their real experience. This could make the
+# application seem less authentic and could negatively affect the candidate's
+# credibility with an employer.
+#
+# 3. One guardrail I would add when deploying this tool professionally would be
+# a clear reminder that users should review and personalize all AI-generated
+# content before submitting it. I would also add safeguards to prevent the tool
+# from inventing qualifications or experience and include moderation checks to
+# reduce harmful or inappropriate responses.
