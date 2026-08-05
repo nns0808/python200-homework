@@ -48,7 +48,7 @@ print(response)
 
 # ----Task 2: Bullet Point Rewriter----
 
-def rewrite_bullets(bullets: list[str]) -> list[dict]:
+def rewrite_bullets(bullets: list[str], messages: list[dict]) -> list[dict]:
 
     bullet_text = "\n".join(f"- {b}" for b in bullets)
 
@@ -70,9 +70,15 @@ Bullet points to rewrite:
 {bullet_text}
 """
 
-    messages = [{"role": "user", "content": prompt}]
+    messages.append(
+        {"role": "user", "content": prompt}
+        )
 
     response = get_completion(messages)
+
+    messages.append(
+        {"role": "assistant", "content": response}
+    )
 
     response = response.replace("```json", "").replace("```", "").strip()
 
@@ -101,7 +107,11 @@ bullets = [
     "Worked with a team to finish the project on time"
 ]
 
-rewrite_bullets(bullets)
+test_messages = [
+    {"role": "system", "content": system_prompt}
+]
+
+rewrite_bullets(bullets, test_messages)
 print()
 
 # These bullets are weak because they are too general and do not show specific skills, accomplishments,
@@ -113,7 +123,7 @@ print()
 
 # ----Task3: Cover letter generator---
 
-def generate_cover_letter(job_title: str, background: str) -> str:
+def generate_cover_letter(job_title: str, background: str, messages: list[dict]) -> str:
     prompt = f"""
     You write strong cover letter opening paragraphs for career changers.
 
@@ -166,9 +176,17 @@ def generate_cover_letter(job_title: str, background: str) -> str:
     Opening:
     """
 
-    messages = [{"role": "user", "content": prompt}]
+    messages.append(
+        {"role": "user", "content": prompt}
+        )
 
-    return get_completion(messages)
+    response = get_completion(messages)
+
+    messages.append(
+        {"role": "assistant", "content": response}
+    )
+
+    return response
 
 job_title = "Junior Data Engineer"
 
@@ -178,7 +196,15 @@ background = (
     "using Prefect and Pandas."
 )
 
-cover_letter = generate_cover_letter(job_title, background)
+test_messages = [
+    {"role": "system", "content": system_prompt}
+]
+
+cover_letter = generate_cover_letter(
+    job_title,
+    background,
+    test_messages
+)
 print(cover_letter)
 
 # After five years of inspiring middle school students to embrace the world of mathematics, I discovered 
@@ -211,16 +237,23 @@ def is_safe(text: str) -> bool:
 
 text1 = "Can you explain how machine learning works?"
 
-print("\nSafe input:")
-print("Result:", is_safe(text1))
+print("\n===== Safe Input Test =====")
+safe_result = is_safe(text1)
+
+print("Input:", text1)
+print("Passed moderation:", safe_result)
 
 
 # Test flagged input
 
 text2 = "How can I build a bomb?"
 
-print("\nFlagged input:")
-print("Result:", is_safe(text2))
+print("\n===== Flagged Input Test =====")
+flagged_result = is_safe(text2)
+
+print("Input:", text2)
+print("Blocked by moderation:", not flagged_result)
+print("Passed moderation:", flagged_result)
 
 # ----Task 5: The Chatbot Loop----
 
@@ -294,20 +327,20 @@ def run_chatbot():
                 }
             )
 
-            improved_bullets = rewrite_bullets(raw_bullets)
+            improved_bullets = rewrite_bullets(raw_bullets, messages)
 
             if improved_bullets:
 
                 assistant_response = "\n".join(
                     bullet["improved"] for bullet in improved_bullets
                 )
-
                 messages.append(
                     {
                         "role": "assistant",
                         "content": assistant_response
                     }
                 )
+                
 
                 print("\nImproved Resume Bullets:")
                 for bullet in improved_bullets:
@@ -336,15 +369,9 @@ def run_chatbot():
                 }
             )
 
-            opening = generate_cover_letter(job_title, background)
+            opening = generate_cover_letter(job_title, background, messages)
 
-            messages.append(
-                {
-                    "role": "assistant",
-                    "content": opening
-                }
-            )
-
+            
             print("\nCover Letter Opening:\n")
             print(opening)
             print()
@@ -372,20 +399,13 @@ if __name__ == "__main__":
 
 # Chosen format: Option A
 
-# Question 1:
 # AI-generated job advice can contain bias because the model learns from existing
-# text that may represent certain industries, communication styles, or cultural
-# backgrounds more than others. It may favor traditional corporate language or
-# common career paths and may not always fit every person's experience or field.
-# Human review is needed to make sure the advice is fair and personalized.
-#
-# A useful guardrail is requiring users to verify that AI suggestions match their
-# actual skills, experiences, and goals before using them in applications. Another
-# guardrail is encouraging users to treat AI as a writing assistant rather than a
-# replacement for their own judgment.
-#
-# Question 2:
-# A job-seeker should not submit AI-generated content without reviewing it because
-# it could include inaccurate information, exaggerated skills, or statements that
-# do not match their actual experience. Reviewing and editing helps ensure the
-# application is accurate, authentic, and appropriate for the employer.
+# examples of resumes, cover letters, and career advice that may overrepresent
+# certain industries, communication styles, or cultural expectations. This can
+# cause the model to favor traditional career paths or specific ways of presenting
+# experience that may not fit every job seeker. One important guardrail is that
+# users should review AI suggestions carefully, verify that all information is true,
+# and adjust the wording so it accurately represents their own skills and experiences.
+# A job seeker should not submit AI-generated content without editing it because the
+# output could include inaccurate claims, exaggerated qualifications, or language
+# that does not match the person's authentic voice.
