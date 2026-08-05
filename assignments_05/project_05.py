@@ -48,7 +48,7 @@ print(response)
 
 # ----Task 2: Bullet Point Rewriter----
 
-def rewrite_bullets(bullets: list[str], messages: list[dict]) -> list[dict]:
+def rewrite_bullets(bullets: list[str]) -> list[dict]:
 
     bullet_text = "\n".join(f"- {b}" for b in bullets)
 
@@ -70,15 +70,9 @@ Bullet points to rewrite:
 {bullet_text}
 """
 
-    messages.append(
-        {"role": "user", "content": prompt}
-        )
+    messages = [{"role": "user", "content": prompt}]
 
     response = get_completion(messages)
-
-    messages.append(
-        {"role": "assistant", "content": response}
-    )
 
     response = response.replace("```json", "").replace("```", "").strip()
 
@@ -107,11 +101,7 @@ bullets = [
     "Worked with a team to finish the project on time"
 ]
 
-test_messages = [
-    {"role": "system", "content": system_prompt}
-]
-
-rewrite_bullets(bullets, test_messages)
+rewrite_bullets(bullets)
 print()
 
 # These bullets are weak because they are too general and do not show specific skills, accomplishments,
@@ -123,7 +113,7 @@ print()
 
 # ----Task3: Cover letter generator---
 
-def generate_cover_letter(job_title: str, background: str, messages: list[dict]) -> str:
+def generate_cover_letter(job_title: str, background: str) -> str:
     prompt = f"""
     You write strong cover letter opening paragraphs for career changers.
 
@@ -176,15 +166,9 @@ def generate_cover_letter(job_title: str, background: str, messages: list[dict])
     Opening:
     """
 
-    messages.append(
-        {"role": "user", "content": prompt}
-        )
+    messages = [{"role": "user", "content": prompt}]
 
     response = get_completion(messages)
-
-    messages.append(
-        {"role": "assistant", "content": response}
-    )
 
     return response
 
@@ -196,14 +180,9 @@ background = (
     "using Prefect and Pandas."
 )
 
-test_messages = [
-    {"role": "system", "content": system_prompt}
-]
-
 cover_letter = generate_cover_letter(
     job_title,
-    background,
-    test_messages
+    background
 )
 print(cover_letter)
 
@@ -264,6 +243,7 @@ Help users improve resumes, cover letters, LinkedIn profiles,
 interview responses, and other job application materials.
 
 Guidelines:
+
 - Stay focused on job application topics.
 - Provide clear, professional, and constructive feedback.
 - Suggest improvements without inventing qualifications or experience.
@@ -304,6 +284,7 @@ def run_chatbot():
 
         # 5. Rewrite resume bullet points
         if "bullet" in user_input.lower() or "resume" in user_input.lower():
+
             print("\nJob Application Helper: Paste your bullet points below, one per line.")
             print("When you're done, type 'DONE' on its own line.\n")
 
@@ -311,40 +292,44 @@ def run_chatbot():
 
             while True:
                 line = input().strip()
+
                 if line.upper() == "DONE":
                     break
+
                 if line:
                     raw_bullets.append(line)
 
-            # Add user request to conversation history
+            # Save the user's request
             messages.append(
                 {
                     "role": "user",
-                    "content": (
+                    "content":
                         "Please rewrite these resume bullet points:\n"
                         + "\n".join(raw_bullets)
-                    )
                 }
             )
 
-            improved_bullets = rewrite_bullets(raw_bullets, messages)
+            improved_bullets = rewrite_bullets(raw_bullets)
 
             if improved_bullets:
 
                 assistant_response = "\n".join(
                     bullet["improved"] for bullet in improved_bullets
                 )
+
+                # Save assistant response
                 messages.append(
                     {
                         "role": "assistant",
                         "content": assistant_response
                     }
                 )
-                
 
-                print("\nImproved Resume Bullets:")
+                print("\nImproved Resume Bullets:\n")
+
                 for bullet in improved_bullets:
                     print(f"- {bullet['improved']}")
+
                 print()
 
             else:
@@ -352,12 +337,19 @@ def run_chatbot():
                     "\nJob Application Helper: "
                     "I could not rewrite the bullets because the response was not valid JSON.\n"
                 )
-                            
+
         # 6. Generate a cover letter opening
         elif "cover letter" in user_input.lower():
-            job_title = input("Job Application Helper: What is the job title? ").strip()
-            background = input("Job Application Helper: Briefly describe your background: ").strip()
 
+            job_title = input(
+                "Job Application Helper: What is the job title? "
+            ).strip()
+
+            background = input(
+                "Job Application Helper: Briefly describe your background: "
+            ).strip()
+
+            # Save the user's request
             messages.append(
                 {
                     "role": "user",
@@ -369,17 +361,28 @@ def run_chatbot():
                 }
             )
 
-            opening = generate_cover_letter(job_title, background, messages)
+            opening = generate_cover_letter(job_title, background)
 
-            
+            # Save assistant response
+            messages.append(
+                {
+                    "role": "assistant",
+                    "content": opening
+                }
+            )
+
             print("\nCover Letter Opening:\n")
             print(opening)
             print()
 
         # 7. Regular chat
         else:
+
             messages.append(
-                {"role": "user", "content": user_input}
+                {
+                    "role": "user",
+                    "content": user_input
+                }
             )
 
             reply = get_completion(messages)
@@ -387,9 +390,12 @@ def run_chatbot():
             print(f"\nJob Application Helper: {reply}\n")
 
             messages.append(
-                {"role": "assistant", "content": reply}
+                {
+                    "role": "assistant",
+                    "content": reply
+                }
             )
-            
+
 
 if __name__ == "__main__":
     run_chatbot()
@@ -399,13 +405,17 @@ if __name__ == "__main__":
 
 # Chosen format: Option A
 
-# AI-generated job advice can contain bias because the model learns from existing
-# examples of resumes, cover letters, and career advice that may overrepresent
-# certain industries, communication styles, or cultural expectations. This can
-# cause the model to favor traditional career paths or specific ways of presenting
-# experience that may not fit every job seeker. One important guardrail is that
-# users should review AI suggestions carefully, verify that all information is true,
-# and adjust the wording so it accurately represents their own skills and experiences.
-# A job seeker should not submit AI-generated content without editing it because the
-# output could include inaccurate claims, exaggerated qualifications, or language
-# that does not match the person's authentic voice.
+# Question 1:
+# AI-generated job advice can contain bias because the model is trained on existing
+# resumes, cover letters, and career advice that may overrepresent certain industries,
+# communication styles, or cultural expectations. As a result, it may favor traditional
+# career paths or writing styles that are not appropriate for every job seeker. One
+# useful guardrail is reminding users to verify that all AI-generated content is accurate,
+# reflects their real experience, and is edited before being used in an application.
+
+# Question 2:
+# A job seeker should never submit AI-generated application materials without reviewing
+# them first because the output may contain inaccurate information, exaggerated claims,
+# or wording that does not reflect the person's authentic voice. Careful human review
+# helps ensure the final application is truthful, personalized, and appropriate for the
+# employer's expectations.

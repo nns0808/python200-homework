@@ -421,11 +421,18 @@ response = client.chat.completions.create(
 )
 
 print("\nOpenAI Response:")
-print(response.choices[0].message.content)
-
+openai_response = response.choices[0].message.content
+print(openai_response)
 """
-Ollama output:
+Ollama comparison:
 
+Terminal command:
+ollama run qwen3:0.6b
+
+Prompt:
+Explain what a large language model is in two sentences.
+
+Ollama output:
 A large language model is an AI system trained on massive amounts of text
 to understand and generate human-like language. It can comprehend context
 and learn from vast datasets, enabling it to perform tasks like writing
