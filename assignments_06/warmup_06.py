@@ -127,12 +127,14 @@ print("Result for Keyword Question 1:")
 print(result[0][0])
 print()
 
-# Keyword Question 1
-# The retrieval function selected "loyalty.txt". This happened because
-# the query word "your" was not treated as a stopword, giving several
-# documents the same overlap score. When there was a tie, the sorting
-# order caused "loyalty.txt" to be selected even though "hours.txt"
-# is the document that actually answers the question about weekend hours.
+# The query should match "hours.txt" because it asks about weekend hours.
+# However, the provided keyword retrieval function selected "loyalty.txt".
+# This happened because "your" is not included in the stopword list, so
+# "hours.txt", "hiring.txt", and "loyalty.txt" each received an overlap
+# score of 1. The tie was then resolved by the sorting behavior, which
+# selected "loyalty.txt". This demonstrates a limitation of simple keyword
+# retrieval: common or irrelevant words can cause the system to retrieve
+# the wrong document.
 
 # Keyword Question 2
 
@@ -166,13 +168,16 @@ print()
 # Keyword Question 3
 
 query = "How do I sign up for rewards?"
-result = simple_keyword_retrieval(query, documents, verbose=True)
+
 documents = {
     "menu.txt": "We serve espresso, lattes, cappuccinos, and cold brew. Pastries include croissants and muffins baked fresh daily. Oat milk and almond milk are available.",
     "hours.txt": "We are open Monday through Friday from 7am to 7pm. On weekends we open at 8am and close at 5pm. We are closed on Thanksgiving and Christmas Day.",
     "hiring.txt": "We are currently hiring baristas and shift supervisors. Send your resume to jobs@groundworkcoffee.com.",
     "loyalty.txt": "Join our loyalty program to earn one point per dollar spent. Redeem 100 points for a free drink of your choice.",
 }
+
+result = simple_keyword_retrieval(query, documents, verbose=True)
+
 # Print the name of the selected document.
 print("Result for Keyword Question 3:")
 print(result[0][0])
@@ -253,10 +258,8 @@ print(documents[0].text[:500])
 
 # LlamaIndex Question 1
 
-# Create an in-memory vector index from the PDF documents
 index = VectorStoreIndex.from_documents(documents)
 
-# Create query engine with top 3 retrieved chunks
 query_engine = index.as_query_engine(similarity_top_k=3)
 
 questions = [
@@ -277,7 +280,7 @@ for question in questions:
     print("\nRetrieved source nodes:")
 
     for i, node in enumerate(response.source_nodes, start=1):
-        print(f"\nSource {i}")
+        print(f"\nSource {i}:")
         print(f"Similarity score: {node.score:.4f}")
         print("Chunk preview:")
         print(node.text[:150])
@@ -298,10 +301,8 @@ for question in questions:
 
 # LlamaIndex Question 2
 
-# Create an in-memory vector index from the PDF documents
 index = VectorStoreIndex.from_documents(documents)
 
-# Create query engine with top 3 retrieved chunks, k=1
 query_engine = index.as_query_engine(similarity_top_k=1)
 
 questions = [
@@ -311,7 +312,7 @@ questions = [
 
 for question in questions:
     print("\n" + "=" * 60)
-    print("Question k=1:")
+    print("Question:")
     print(question)
 
     response = query_engine.query(question)
@@ -322,15 +323,15 @@ for question in questions:
     print("\nRetrieved source nodes:")
 
     for i, node in enumerate(response.source_nodes, start=1):
-        print(f"\nSource {i}")
+        print(f"\nSource {i}:")
         print(f"Similarity score: {node.score:.4f}")
         print("Chunk preview:")
         print(node.text[:150])
 
-# Create an in-memory vector index from the PDF documents
+# LlamaIndex Question 3
+
 index = VectorStoreIndex.from_documents(documents)
 
-# Create query engine with top 3 retrieved chunks, k=5
 query_engine = index.as_query_engine(similarity_top_k=5)
 
 questions = [
@@ -340,7 +341,7 @@ questions = [
 
 for question in questions:
     print("\n" + "=" * 60)
-    print("Question k=5:")
+    print("Question:")
     print(question)
 
     response = query_engine.query(question)
@@ -351,7 +352,7 @@ for question in questions:
     print("\nRetrieved source nodes:")
 
     for i, node in enumerate(response.source_nodes, start=1):
-        print(f"\nSource {i}")
+        print(f"\nSource {i}:")
         print(f"Similarity score: {node.score:.4f}")
         print("Chunk preview:")
         print(node.text[:150])
@@ -431,25 +432,21 @@ relevancy_result = relevancy_evaluator.evaluate_response(
     response=response
 )
 
-# Print results
+# print results
+
+print("\n" + "=" * 60)
+print("Q4 - BrightLeaf benefits question")
 print("Question:")
 print(q)
 
 print("\nResponse:")
-print(response)
+print(response.response)
 
-print("\nFaithfulness Evaluation:")
-print("Passing:", faithfulness_result.passing)
-print("Score:", faithfulness_result.score)
-print("Feedback:", faithfulness_result.feedback)
-
-print("\nRelevancy Evaluation:")
-print("Passing:", relevancy_result.passing)
-print("Score:", relevancy_result.score)
-print("Feedback:", relevancy_result.feedback)
-print()
+print("\nFaithfulness score:", faithfulness_result.score)
+print("Relevancy score:", relevancy_result.score)
 
 # Query about information that should not be in the BrightLeaf documents
+
 q2 = "What is the population of France?"
 
 # Get the response from the same query engine
@@ -468,22 +465,16 @@ relevancy_result2 = relevancy_evaluator.evaluate_response(
 )
 
 # Print results
+print("\n" + "=" * 60)
+print("Q4 - Out-of-context question")
 print("Question:")
 print(q2)
 
 print("\nResponse:")
-print(response2)
+print(response2.response)
 
-print("\nFaithfulness Evaluation:")
-print("Passing:", faithfulness_result2.passing)
-print("Score:", faithfulness_result2.score)
-print("Feedback:", faithfulness_result2.feedback)
-
-print("\nRelevancy Evaluation:")
-print("Passing:", relevancy_result2.passing)
-print("Score:", relevancy_result2.score)
-print("Feedback:", relevancy_result2.feedback)
-print()
+print("\nFaithfulness score:", faithfulness_result2.score)
+print("Relevancy score:", relevancy_result2.score)
 
 # Evaluation Comments:
 #

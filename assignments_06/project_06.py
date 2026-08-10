@@ -12,9 +12,7 @@ else:
 assert os.getenv("OPENAI_API_KEY"), "OPENAI_API_KEY not found. Check your .env file."
 
 # Verify that the Groundwork documents directory exists
-docs_dir = Path(
-    "../python-200/lessons/06_AI_augmentation/resources/groundwork_docs"
-)
+docs_dir = Path("assignments_06/resources/groundwork_docs")
 
 assert docs_dir.exists(), f"Document directory not found: {docs_dir}"
 
@@ -107,8 +105,7 @@ for question in questions:
 # Step 5: Find a Failure
 
 failure_question = (
-    "For wholesale coffee orders, does Groundwork source its coffee "
-    "from the same farms in Guatemala where Maya worked for two years?"
+    "Who is the current CEO of Groundwork Coffee?"
 )
 
 print("\n" + "=" * 60)
@@ -131,41 +128,35 @@ for i, node in enumerate(failure_response.source_nodes, start=1):
 
 # Reflection on the failure case:
 #
-# I asked: "For wholesale coffee orders, does Groundwork source its coffee
-# from the same farms in Guatemala where Maya worked for two years?" I
-# expected this question to be difficult because it requires combining
-# information from more than one document and determining whether two facts
-# are actually connected. The documents say that Maya worked on a coffee
-# farm in Guatemala and separately provide information about Groundwork's
-# wholesale coffee, but they do not clearly state that these are the same
-# farms.
+# I asked: "Who is the current CEO of Groundwork Coffee?" I expected this
+# question to be difficult because the Groundwork documents do not contain
+# information about the company's current CEO.
 #
-# The retrieval was partially successful because the system retrieved
-# our_story.txt and wholesale_catering.txt, which were relevant to different
-# parts of the question. However, the retrieved information did not prove
-# that Groundwork sources coffee from the specific farms where Maya worked.
-# The model guessed anyway and answered that Groundwork sources coffee from
-# partner farms in Guatemala. This did not actually answer whether they were
-# the same farms.
+# The retrieval system returned our_story.txt as the top result because it
+# contains information about the founders, Maya Torres and Sam Okafor.
+# However, the document does not say that either founder is the current CEO.
+# The other retrieved documents were about wholesale and catering and the
+# Barista Box, so they also did not contain information about the CEO.
 #
-# The model still sounded confident even though the documents did not
-# provide enough information to support its conclusion. It did not say that
-# the information was uncertain or unavailable. This shows why AI-generated
-# responses should not automatically be trusted just because they sound
-# confident. A confident tone does not necessarily mean that the answer is
-# supported by the source documents.
+# The model then answered that Maya Torres and Sam Okafor are the founders
+# instead of answering the question about the current CEO. This means the
+# model used related information from the retrieved context but did not
+# actually answer the question. It did not clearly state that the CEO
+# information was unavailable.
 #
-# To improve the system, I would add a stronger guardrail requiring the model
-# to answer "not enough information" when the retrieved documents do not
-# explicitly support a conclusion. I would also improve retrieval by using
-# more relevant chunks and evaluate the final answer for faithfulness before
-# returning it to the user. This could help reduce unsupported assumptions
-# when combining information from multiple documents.
+# The response also sounded confident even though the retrieved documents
+# did not support the answer. This shows that a confident AI response is not
+# necessarily a correct or well-supported response. Users should check the
+# retrieved information rather than trusting the model's tone or confidence.
+#
+# To improve the system, I would add a guardrail requiring the model to say
+# that the information is not available when the retrieved documents do not
+# directly support an answer. I would also add a similarity-score threshold
+# or another retrieval check to identify questions for which the available
+# documents do not contain sufficient information.
 
 # Step 6: Reflection
 
-# Final Reflection:
-#
 # 1. The equivalent LlamaIndex implementation took 7 lines of core
 #    RAG code in my project, compared with many more lines when semantic RAG
 #    was built manually. LlamaIndex handled document loading, embeddings,
