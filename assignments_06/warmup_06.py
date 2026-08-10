@@ -232,7 +232,6 @@ print()
 
 # ---LlamaIndex---
 
-from dotenv import load_dotenv
 from llama_index.llms.openai import OpenAI
 from llama_index.core import SimpleDirectoryReader, VectorStoreIndex, Settings
 from llama_index.readers.file import PDFReader
@@ -279,7 +278,7 @@ for question in questions:
 
     print("\nRetrieved source nodes:")
 
-    for i, node in enumerate(response.source_nodes, start=1):
+    for i, node in enumerate(response.source_nodes[:3], start=1):
         print(f"\nSource {i}:")
         print(f"Similarity score: {node.score:.4f}")
         print("Chunk preview:")
@@ -300,21 +299,17 @@ for question in questions:
 # addition to the most relevant document.
 
 # LlamaIndex Question 2
+# Compare the same query using similarity_top_k=1 and similarity_top_k=5
 
-index = VectorStoreIndex.from_documents(documents)
+question = "What employee benefits does BrightLeaf offer?"
 
-query_engine = index.as_query_engine(similarity_top_k=1)
-
-questions = [
-    "What employee benefits does BrightLeaf offer?",
-    "What are BrightLeaf's security policies?",
-]
-
-for question in questions:
+for k in [1, 5]:
     print("\n" + "=" * 60)
+    print(f"LlamaIndex Question 2 - similarity_top_k={k}")
     print("Question:")
     print(question)
 
+    query_engine = index.as_query_engine(similarity_top_k=k)
     response = query_engine.query(question)
 
     print("\nAnswer:")
@@ -327,66 +322,26 @@ for question in questions:
         print(f"Similarity score: {node.score:.4f}")
         print("Chunk preview:")
         print(node.text[:150])
-
-# LlamaIndex Question 3
-
-index = VectorStoreIndex.from_documents(documents)
-
-query_engine = index.as_query_engine(similarity_top_k=5)
-
-questions = [
-    "What employee benefits does BrightLeaf offer?",
-    "What are BrightLeaf's security policies?",
-]
-
-for question in questions:
-    print("\n" + "=" * 60)
-    print("Question:")
-    print(question)
-
-    response = query_engine.query(question)
-
-    print("\nAnswer:")
-    print(response.response)
-
-    print("\nRetrieved source nodes:")
-
-    for i, node in enumerate(response.source_nodes, start=1):
-        print(f"\nSource {i}:")
-        print(f"Similarity score: {node.score:.4f}")
-        print("Chunk preview:")
-        print(node.text[:150])
-
-# The responses with similarity_top_k=1 and similarity_top_k=5 were very similar.
-# The top retrieved chunk contained enough information to answer both questions,
-# so increasing k did not significantly improve the answers.
-#
-# With similarity_top_k=5, the model retrieved additional documents such as the
-# company overview, partnership information, and financial report. These provided
-# extra context but were not directly related to the questions.
-#
-# More retrieved context is not always better. While additional relevant chunks
-# can help answer complex questions, retrieving too many chunks may include
-# unrelated information, increase response time and API cost, and make it harder
-# for the model to focus on the most important details.
 
 # LlamaIndex Question 3
 
 query = "Who is the current CEO of BrightLeaf Solar?"
 
 print("\n" + "=" * 60)
+print("LlamaIndex Question 3 - Failure Case")
 print("Question:")
 print(query)
 
+query_engine = index.as_query_engine(similarity_top_k=5)
 response = query_engine.query(query)
 
 print("\nAnswer:")
 print(response.response)
 
-print("\nRetrieved source nodes:")
+print("\nAll Retrieved Source Nodes:")
 
 for i, node in enumerate(response.source_nodes, start=1):
-    print(f"\nSource {i}")
+    print(f"\nSource {i}:")
     print(f"Similarity score: {node.score:.4f}")
     print("Chunk preview:")
     print(node.text[:150])
@@ -396,8 +351,6 @@ for i, node in enumerate(response.source_nodes, start=1):
 #
 # The system still retrieved the most similar document chunks, such as the
 # company overview, but those chunks did not answer the question directly.
-# The model responded based only on the available context instead of inventing
-# information.
 #
 # To improve the system, I would add more relevant documents containing company
 # leadership information or configure the assistant to clearly state when the
@@ -414,59 +367,58 @@ judge_llm = OpenAI(model="gpt-4o-mini")
 faithfulness_evaluator = FaithfulnessEvaluator(llm=judge_llm)
 relevancy_evaluator = RelevancyEvaluator(llm=judge_llm)
 
-# Query from Q1
-q = "What employee benefits does BrightLeaf offer?"
+# --------------------------------------------------
+# Q4 - Evaluation Run 1: Requested BrightLeaf query
+# --------------------------------------------------
 
-# Get the response from your existing query engine
-response = query_engine.query(q)
+q1 = "What employee benefits does BrightLeaf offer?"
 
-# Evaluate faithfulness
-faithfulness_result = faithfulness_evaluator.evaluate_response(
-    query=q,
-    response=response
+query_engine = index.as_query_engine(similarity_top_k=3)
+response1 = query_engine.query(q1)
+
+faithfulness_result1 = faithfulness_evaluator.evaluate_response(
+    query=q1,
+    response=response1
 )
 
-# Evaluate relevancy
-relevancy_result = relevancy_evaluator.evaluate_response(
-    query=q,
-    response=response
+relevancy_result1 = relevancy_evaluator.evaluate_response(
+    query=q1,
+    response=response1
 )
-
-# print results
 
 print("\n" + "=" * 60)
-print("Q4 - BrightLeaf benefits question")
+print("LlamaIndex Question 4 - Evaluation Run 1")
+print("Requested BrightLeaf Query")
 print("Question:")
-print(q)
+print(q1)
 
 print("\nResponse:")
-print(response.response)
+print(response1.response)
 
-print("\nFaithfulness score:", faithfulness_result.score)
-print("Relevancy score:", relevancy_result.score)
+print("\nFaithfulness score:", faithfulness_result1.score)
+print("Relevancy score:", relevancy_result1.score)
 
-# Query about information that should not be in the BrightLeaf documents
+# --------------------------------------------------
+# Q4 - Evaluation Run 2: Lower-quality/out-of-context query
+# --------------------------------------------------
 
 q2 = "What is the population of France?"
 
-# Get the response from the same query engine
 response2 = query_engine.query(q2)
 
-# Evaluate faithfulness
 faithfulness_result2 = faithfulness_evaluator.evaluate_response(
     query=q2,
     response=response2
 )
 
-# Evaluate relevancy
 relevancy_result2 = relevancy_evaluator.evaluate_response(
     query=q2,
     response=response2
 )
 
-# Print results
 print("\n" + "=" * 60)
-print("Q4 - Out-of-context question")
+print("LlamaIndex Question 4 - Evaluation Run 2")
+print("Lower-Quality / Out-of-Context Query")
 print("Question:")
 print(q2)
 
@@ -478,30 +430,28 @@ print("Relevancy score:", relevancy_result2.score)
 
 # Evaluation Comments:
 #
-#   A faithfulness score of 1.0 means that the response is fully supported
-#   by the retrieved context and does not contain unsupported claims. A score
-#   of 0.0 indicates that the response is not supported by the retrieved
-#   context or contains information that cannot be verified from the context.
+# Faithfulness measures whether the response is supported by the retrieved
+# context and does not contain unsupported claims. A score of 1.0 indicates
+# that the response is fully supported, while a score of 0.0 indicates that
+# the response is not supported by the retrieved context.
 #
-#   A relevancy score measures how well the response addresses the user's
-#   question. Faithfulness and relevancy are different: faithfulness checks
-#   whether the answer is grounded in the retrieved information, while
-#   relevancy checks whether the answer actually answers the question.
+# Relevancy measures how well the response addresses the user's question.
+# Faithfulness checks whether the answer is grounded in the retrieved
+# information, while relevancy checks whether it actually answers the question.
 #
-#   The scores changed between the two queries. For the BrightLeaf benefits
-#   question, both Faithfulness and Relevancy received a score of 1.0 because
-#   the response was supported by the BrightLeaf documents and directly
-#   answered the question. For the question about the population of France,
-#   both scores were 0.0. That information was not in the BrightLeaf
-#   documents, so the response could not provide an answer supported by the
-#   retrieved context and did not directly answer the question. Although the
-#   system appropriately avoided hallucinating, the evaluators still gave
-#   it a failing score.
+# Evaluation Run 1, using the BrightLeaf benefits question, received
+# Faithfulness = 1.0 and Relevancy = 1.0. The response was supported by the
+# BrightLeaf documents and directly answered the question.
 #
-#   "LLM-as-a-judge" means using another language model to evaluate the
-#   quality of an LLM-generated response. It is useful for RAG evaluation
-#   because qualities such as faithfulness and relevancy are difficult to
-#   measure with a simple exact-match accuracy metric. A response can be
-#   correct even if it uses different wording from a reference answer.
-#   An LLM judge can evaluate whether the response is supported by the
-#   retrieved context and whether it meaningfully answers the question.
+# Evaluation Run 2, using the out-of-context population-of-France question,
+# received Faithfulness = 0.0 and Relevancy = 0.0. The requested information
+# was not contained in the BrightLeaf documents, so the response could not be
+# supported by the retrieved context or directly answered using the available
+# information. The system appropriately avoided hallucinating an answer.
+#
+# "LLM-as-a-judge" means using another language model to evaluate the quality
+# of an LLM-generated response. It is useful for RAG evaluation because
+# qualities such as faithfulness and relevancy are difficult to measure with
+# simple exact-match accuracy. An LLM judge can evaluate whether a response
+# is supported by the retrieved context and whether it meaningfully addresses
+# the user's question, even when its wording differs from a reference answer.
