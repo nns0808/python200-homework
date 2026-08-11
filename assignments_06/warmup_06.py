@@ -64,9 +64,10 @@ else:
 # 8. Generate a response from the LLM
 #    The language model uses the user's question and retrieved context to produce an answer.
 
-# ---Keyword RAG---
+# --- Keyword RAG ---
 
 import string
+
 
 def simple_keyword_retrieval(query, documents, verbose=True):
     """Keyword retrieval using token overlap scoring."""
@@ -75,6 +76,7 @@ def simple_keyword_retrieval(query, documents, verbose=True):
         "are", "was", "were", "by", "with", "at", "from", "that", "this",
         "as", "be", "it", "its", "their", "they", "we", "you", "our"
     }
+
     translator = str.maketrans("", "", string.punctuation)
 
     query_words = {
@@ -82,24 +84,34 @@ def simple_keyword_retrieval(query, documents, verbose=True):
         for w in query.lower().split()
         if w not in stopwords
     }
+
     if verbose:
         print(f"\nQuery tokens (filtered): {sorted(query_words)}")
 
     scores = []
+
     for name, content in documents.items():
         content_words = {
             w.translate(translator)
             for w in content.lower().split()
             if w not in stopwords
         }
+
         overlap = query_words & content_words
         score = len(overlap)
+
         scores.append((score, name, content))
+
         if verbose:
             print(f"[{name}] overlap={score} -> {sorted(overlap)}")
 
     scores.sort(reverse=True)
-    best = next(((name, content) for score, name, content in scores if score > 0), None)
+
+    best = next(
+        ((name, content) for score, name, content in scores if score > 0),
+        None
+    )
+
     if best:
         if verbose:
             print(f"\nSelected best match: {best[0]}")
@@ -108,103 +120,120 @@ def simple_keyword_retrieval(query, documents, verbose=True):
         if verbose:
             print("\nNo overlapping keywords found.")
         return [("None found", "No relevant content.")]
-    
+
+
+documents = {
+    "menu.txt": (
+        "We serve espresso, lattes, cappuccinos, and cold brew. "
+        "Pastries include croissants and muffins baked fresh daily. "
+        "Oat milk and almond milk are available."
+    ),
+    "hours.txt": (
+        "We are open Monday through Friday from 7am to 7pm. "
+        "On weekends we open at 8am and close at 5pm. "
+        "We are closed on Thanksgiving and Christmas Day."
+    ),
+    "hiring.txt": (
+        "We are currently hiring baristas and shift supervisors. "
+        "Send your resume to jobs@groundworkcoffee.com."
+    ),
+    "loyalty.txt": (
+        "Join our loyalty program to earn one point per dollar spent. "
+        "Redeem 100 points for a free drink of your choice."
+    ),
+}
+
+
+# ============================================================
 # Keyword Question 1
+# ============================================================
 
 query = "What are your hours on weekends?"
 
-documents = {
-    "menu.txt": "We serve espresso, lattes, cappuccinos, and cold brew. Pastries include croissants and muffins baked fresh daily. Oat milk and almond milk are available.",
-    "hours.txt": "We are open Monday through Friday from 7am to 7pm. On weekends we open at 8am and close at 5pm. We are closed on Thanksgiving and Christmas Day.",
-    "hiring.txt": "We are currently hiring baristas and shift supervisors. Send your resume to jobs@groundworkcoffee.com.",
-    "loyalty.txt": "Join our loyalty program to earn one point per dollar spent. Redeem 100 points for a free drink of your choice.",
-}
-
 result = simple_keyword_retrieval(query, documents, verbose=True)
 
-# Print the name of the selected document.
-print("Result for Keyword Question 1:")
+print("\nResult for Keyword Question 1:")
 print(result[0][0])
 print()
 
 # The query should match "hours.txt" because it asks about weekend hours.
-# However, the provided keyword retrieval function selected "loyalty.txt".
+#
+# However, the keyword retrieval function selected "loyalty.txt".
+#
 # This happened because "your" is not included in the stopword list, so
 # "hours.txt", "hiring.txt", and "loyalty.txt" each received an overlap
 # score of 1. The tie was then resolved by the sorting behavior, which
-# selected "loyalty.txt". This demonstrates a limitation of simple keyword
-# retrieval: common or irrelevant words can cause the system to retrieve
-# the wrong document.
+# selected "loyalty.txt".
+#
+# This demonstrates a limitation of simple keyword retrieval: common or
+# irrelevant words can cause the system to retrieve the wrong document.
 
+
+# ============================================================
 # Keyword Question 2
+# ============================================================
 
 query = "Do you have anything without caffeine?"
-documents = {
-    "menu.txt": "We serve espresso, lattes, cappuccinos, and cold brew. Pastries include croissants and muffins baked fresh daily. Oat milk and almond milk are available.",
-    "hours.txt": "We are open Monday through Friday from 7am to 7pm. On weekends we open at 8am and close at 5pm. We are closed on Thanksgiving and Christmas Day.",
-    "hiring.txt": "We are currently hiring baristas and shift supervisors. Send your resume to jobs@groundworkcoffee.com.",
-    "loyalty.txt": "Join our loyalty program to earn one point per dollar spent. Redeem 100 points for a free drink of your choice.",
-}
 
+# Reuse the same documents from Question 1.
 result = simple_keyword_retrieval(query, documents, verbose=True)
 
-# Print the name of the selected document.
-print("Result for Keyword Question 2:")
+print("\nResult for Keyword Question 2:")
 print(result[0][0])
 print()
 
-# Keyword Question 2
-
-# Result:
 # The retrieval function selected "loyalty.txt" because the query contains
 # words such as "you" and "have" that are not included in the stopword list.
 # These words create keyword overlap even though "loyalty.txt" is not relevant
 # to the question.
 #
-# Keyword RAG did not get this right. The most relevant document is "menu.txt",
-# because it contains information about drinks, but the keyword retrieval
-# method cannot recognize the relationship between "caffeine" and the drinks
-# listed in the menu.
+# Keyword RAG did not get this right. The most relevant document is
+# "menu.txt" because it contains information about drinks, but the keyword
+# retrieval method cannot recognize the relationship between "caffeine" and
+# the drinks listed in the menu.
 #
-# Semantic retrieval would do better because embeddings can capture the meaning
-# of the query and recognize that a question about caffeine is related to the
-# drinks described in "menu.txt", even when the exact word "caffeine" does not
-# appear in the document.
+# Semantic retrieval would likely do better because embeddings can capture
+# the meaning of the query and recognize that a question about caffeine is
+# related to the drinks described in "menu.txt", even when the exact word
+# "caffeine" does not appear in the document.
 
+
+# ============================================================
 # Keyword Question 3
+# ============================================================
 
 query = "How do I sign up for rewards?"
 
-documents = {
-    "menu.txt": "We serve espresso, lattes, cappuccinos, and cold brew. Pastries include croissants and muffins baked fresh daily. Oat milk and almond milk are available.",
-    "hours.txt": "We are open Monday through Friday from 7am to 7pm. On weekends we open at 8am and close at 5pm. We are closed on Thanksgiving and Christmas Day.",
-    "hiring.txt": "We are currently hiring baristas and shift supervisors. Send your resume to jobs@groundworkcoffee.com.",
-    "loyalty.txt": "Join our loyalty program to earn one point per dollar spent. Redeem 100 points for a free drink of your choice.",
-}
-
-result = simple_keyword_retrieval(query, documents, verbose=True)
-
-# Print the name of the selected document.
-print("Result for Keyword Question 3:")
-print(result[0][0])
-print()
-
-# Keyword Question 3
-#
 # Prediction:
+#
 # I predict that "loyalty.txt" will be selected because signing up for
 # rewards is related to the loyalty program described in that document.
 #
+# I expect the keyword retrieval system may still fail because the query
+# uses words such as "rewards" and "sign up", while the document uses
+# different words such as "loyalty" and "join."
+
+# Run the keyword retrieval after making the prediction.
+
+result = simple_keyword_retrieval(query, documents, verbose=True)
+
+print("\nResult for Keyword Question 3:")
+print(result[0][0])
+print()
+
 # Result:
-# My prediction was not correct. No document was selected because the
-# query uses the words "rewards" and "sign up," while the document uses
-# different words such as "loyalty" and "join." Since keyword retrieval
-# only matches exact words, it could not recognize that these phrases
-# have similar meanings.
+
+# My prediction was not correct. No document was selected because the query
+# uses the words "rewards" and "sign up," while the document uses different
+# words such as "loyalty" and "join."
 #
-# An embedding-based (semantic) retrieval system would likely retrieve
+# Since keyword retrieval only matches exact words, it could not recognize
+# that these phrases have similar meanings.
+#
+# An embedding-based semantic retrieval system would likely retrieve
 # "loyalty.txt" because it understands that "rewards" is related to a
 # loyalty program and that "sign up" is similar in meaning to "join."
+
 
 # ---Semantic RAG Concepts---
 
@@ -386,26 +415,34 @@ for i, node in enumerate(response.source_nodes, start=1):
 # leadership information or configure the assistant to clearly state when the
 # requested information is not available in the retrieved documents.
 
-# LlamaIndex Question 4
+# ============================================================
+# LlamaIndex Question 4 - Evaluation
+# ============================================================
 
-from llama_index.core.evaluation import FaithfulnessEvaluator, RelevancyEvaluator
+from llama_index.core.evaluation import (
+    FaithfulnessEvaluator,
+    RelevancyEvaluator
+)
 
-# Use gpt-4o-mini as the evaluator/judge LLM
+# Use the same LLM configuration for evaluation as the lesson.
 judge_llm = OpenAI(model="gpt-4o-mini")
 
-# Create the evaluation tools
+# Create the evaluators.
 faithfulness_evaluator = FaithfulnessEvaluator(llm=judge_llm)
 relevancy_evaluator = RelevancyEvaluator(llm=judge_llm)
 
-# --------------------------------------------------
-# Q4 - Evaluation Run 1: Required query
-# --------------------------------------------------
+
+# ============================================================
+# Q4 - Evaluation Run 1: Required Query
+# ============================================================
 
 q1 = "What employee benefits does BrightLeaf offer?"
 
 query_engine = index.as_query_engine(similarity_top_k=3)
+
 response1 = query_engine.query(q1)
 
+# Evaluate the complete LlamaIndex response object.
 faithfulness_result1 = faithfulness_evaluator.evaluate_response(
     query=q1,
     response=response1
@@ -428,14 +465,16 @@ print(response1.response)
 print("\nFaithfulness score:", faithfulness_result1.score)
 print("Relevancy score:", relevancy_result1.score)
 
-# --------------------------------------------------
-# Q4 - Evaluation Run 2: Lower-quality query
-# --------------------------------------------------
+
+# ============================================================
+# Q4 - Evaluation Run 2: Lower-Quality / Out-of-Context Query
+# ============================================================
 
 q2 = "What is the population of France?"
 
 response2 = query_engine.query(q2)
 
+# Evaluate the complete LlamaIndex response object.
 faithfulness_result2 = faithfulness_evaluator.evaluate_response(
     query=q2,
     response=response2
@@ -458,36 +497,29 @@ print(response2.response)
 print("\nFaithfulness score:", faithfulness_result2.score)
 print("Relevancy score:", relevancy_result2.score)
 
-# --------------------------------------------------
-# Evaluation Comments
-# --------------------------------------------------
 
-# 1. What does each metric measure?
-#
+# ============================================================
+# Evaluation Comments
+# ============================================================
+
 # Faithfulness measures whether the response is supported by the retrieved
 # context and does not contain unsupported claims. A score of 1.0 means the
 # response is fully supported by the retrieved context, while a score of 0.0
 # means the response is not supported by the retrieved context.
-
+#
 # Relevancy measures whether the response directly addresses the user's
 # question. A high relevancy score means the response is focused on answering
 # the query, while a low score means the response does not adequately answer
 # the question.
-
-# 2. What were the results for the required query?
 #
 # For the BrightLeaf employee benefits question, the response received
 # Faithfulness = 1.0 and Relevancy = 1.0. The answer was supported by the
 # retrieved BrightLeaf context and directly addressed the question.
-
-# 3. What happened with the lower-quality query?
 #
 # For the population of France question, the response received
 # Faithfulness = 0.0 and Relevancy = 0.0. The BrightLeaf documents did not
 # contain information about the population of France, so the response could
 # not be supported by the retrieved context or adequately answer the question.
-
-# 4. What is LLM-as-a-judge and why is it useful?
 #
 # LLM-as-a-judge means using another language model to evaluate the quality
 # of an LLM-generated response. It is useful for RAG evaluation because

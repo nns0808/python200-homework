@@ -64,6 +64,7 @@ for question in questions:
     print("\nAnswer:")
     print(response.response)
 
+    # Print the top retrieved source node
     print("\nTop Retrieved Source Node:")
 
     if response.source_nodes:
@@ -75,20 +76,9 @@ for question in questions:
     else:
         print("No source nodes retrieved.")
 
-    # Print the top retrieved source node
-    if response.source_nodes:
-        node = response.source_nodes[0]
-
-        print("\nTop Retrieved Source:")
-        print(f"Document: {node.metadata['file_name']}")
-        print(f"Similarity score: {node.score:.4f}")
-        print("Chunk preview:")
-        print(node.text[:200])
-    else:
-        print("\nNo source nodes retrieved.")
 
 # Reflection on the five responses:
-#
+
 # The assistant sounded confident and accurate across all five questions.
 # The answers were supported by the retrieved documents, and the top
 # retrieved source generally matched the topic of each question.
@@ -111,31 +101,36 @@ for question in questions:
 # also show why it is useful to inspect the retrieved source nodes rather
 # than relying only on the generated answer.
 
+
 # Step 5: Find a Failure
 
-failure_question = (
-    "Who is the current CEO of Groundwork Coffee?"
-)
+failure_question = "Who is the current CEO of Groundwork Coffee?"
 
 print("\n" + "=" * 60)
 print("Failure Question:")
 print(failure_question)
 
-failure_response = query_engine.query(failure_question)
+failure_query_engine = index.as_query_engine(similarity_top_k=3)
+
+failure_response = failure_query_engine.query(failure_question)
 
 print("\nFull Response:")
 print(failure_response.response)
 
 print("\nAll Retrieved Source Nodes:")
 
-for i, node in enumerate(failure_response.source_nodes[:3], start=1):
-    print(f"\nSource {i}:")
-    print(f"Document name: {node.metadata['file_name']}")
-    print(f"Similarity score: {node.score:.4f}")
-    print(f"Chunk text (first 200 characters): {node.text[:200]}")
+if failure_response.source_nodes:
+    for i, node in enumerate(failure_response.source_nodes, start=1):
+        print(f"\nSource {i}:")
+        print(f"Document name: {node.metadata['file_name']}")
+        print(f"Similarity score: {node.score:.4f}")
+        print(f"Chunk text (first 200 characters): {node.text[:200]}")
+else:
+    print("No source nodes retrieved.")
+
 
 # Reflection on the failure case:
-#
+
 # I asked: "Who is the current CEO of Groundwork Coffee?" I expected this
 # question to be difficult because the Groundwork documents do not contain
 # information about the company's current CEO.
@@ -194,6 +189,11 @@ for i, node in enumerate(failure_response.source_nodes[:3], start=1):
 #    The model can still misunderstand, combine facts incorrectly, or make
 #    unsupported inferences from the retrieved information.
 
+
+
+# ============================================================
+# OPTIONAL EXTENSIONS
+# ============================================================
 # ---- Extension A: Side-by-Side Comparison (Moderate) ----
 
 import string
@@ -346,7 +346,9 @@ for question in groundwork_questions:
 # caused it to select the wrong document. LlamaIndex successfully
 # answered all five queries.
 
-# ----Extension C: Add a New Document (Low)----
+# ============================================================
+# Extension C: Add a New Document (Low)
+# ============================================================
 
 question = "What are the Barista Box options and how much do they cost?"
 response = query_engine.query(question)
