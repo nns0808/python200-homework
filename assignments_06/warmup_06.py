@@ -27,7 +27,7 @@ else:
 
 
 # Concepts Question 2
-#
+
 # A confidently wrong answer is more harmful than one that says "I am not sure"
 # because people are more likely to trust and act on information that is presented
 # with confidence. When the model admits uncertainty, users are more likely to
@@ -40,29 +40,41 @@ else:
 
 # Concepts Question 3
 
-# 1. Extract text from source documents
-#    Read the original documents and extract their text for processing.
+# Arrange the following RAG pipeline steps in the correct order:
+
+# - Receive the user's query
+# - Split text into chunks
+# - Generate a response from the LLM
+# - Extract text from source documents
+# - Retrieve the most relevant chunks
+# - Convert text chunks into embeddings
+# - Embed the user's query
+# - Inject retrieved chunks into the prompt
 #
-# 2. Split text into chunks
-#    Break the text into smaller sections so relevant information can be retrieved efficiently.
+# Correct order:
 #
-# 3. Convert text chunks into embeddings
-#    Transform each text chunk into a numerical vector and store it for similarity search.
+# - Extract text from source documents
+# - Split text into chunks
+# - Convert text chunks into embeddings
+# - Receive the user's query
+# - Embed the user's query
+# - Retrieve the most relevant chunks
+# - Inject retrieved chunks into the prompt
+# - Generate a response from the LLM
 #
-# 4. Receive the user's query
-#    Accept the user's question or request.
+# Explanation:
+
+# First, the source documents are loaded and their text is extracted.
+# The text is then divided into smaller chunks, and each chunk is converted
+# into an embedding for similarity search.
 #
-# 5. Embed the user's query
-#    Convert the user's question into an embedding using the same embedding model.
+# When a user submits a question, the query is also converted into an
+# embedding. The system compares the query embedding with the document
+# embeddings and retrieves the most relevant chunks.
 #
-# 6. Retrieve the most relevant chunks
-#    Find the document chunks whose embeddings are most similar to the query embedding.
-#
-# 7. Inject retrieved chunks into the prompt
-#    Add the retrieved context and the user's question to the prompt sent to the language model.
-#
-# 8. Generate a response from the LLM
-#    The language model uses the user's question and retrieved context to produce an answer.
+# The retrieved chunks are then added to the prompt along with the user's
+# question. Finally, the LLM uses this retrieved context to generate the
+# response.
 
 # --- Keyword RAG ---
 

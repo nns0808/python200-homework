@@ -136,10 +136,10 @@ else:
 # information about the company's current CEO.
 #
 # The system retrieved three source nodes, but none of them directly answered
-# the question. The top result was our_story.txt because it contained related
-# information about Groundwork's founders, Maya Torres and Sam Okafor.
-# The other retrieved documents were also related to Groundwork but did not
-# provide information about the current CEO.
+# the question. The top retrieved source was our_story.txt, which contained
+# information related to Groundwork's founders and company history. The other
+# retrieved sources were also related to Groundwork but did not provide
+# information about the current CEO.
 #
 # The response showed a tone shift compared with the successful queries.
 # For the five project questions, the assistant sounded confident because the
@@ -147,16 +147,16 @@ else:
 # this failure case, the assistant still sounded confident even though the
 # retrieved context did not contain the requested CEO information. Instead of
 # clearly stating that the information was unavailable, it provided related
-# information about the founders.
+# information from the retrieved documents.
 #
-# This shows that semantic retrieval can return related information even when
-# the retrieved documents do not actually answer the question. It also shows
-# that a confident tone does not guarantee that an answer is supported by the
-# retrieved context.
+# This shows that semantic retrieval can return information that is related
+# to a question without actually answering it. It also shows that a confident
+# response does not guarantee that the answer is supported by the retrieved
+# context.
 #
 # To improve the system, I would add a guardrail that requires the assistant
-# to say that the information is not available when the retrieved context does
-# not directly support an answer. I would also add a similarity-score
+# to state that the information is not available when the retrieved context
+# does not directly support an answer. I would also add a similarity-score
 # threshold or retrieval-quality check so the system can recognize when the
 # retrieved documents are not sufficiently relevant before generating a
 # response.
