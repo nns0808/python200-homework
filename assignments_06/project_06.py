@@ -44,6 +44,8 @@ query_engine = index.as_query_engine(similarity_top_k=3)
 
 print("Index built successfully. Ready to answer questions.")
 
+# Step 4: Run the Five Queries and Inspect Retrieved Source Nodes
+
 questions = [
     "What are Groundwork's hours on weekends?",
     "Do you offer any dairy-free milk options?",
@@ -62,7 +64,16 @@ for question in questions:
     print("\nAnswer:")
     print(response.response)
 
-    print("\nRetrieved source nodes:")
+    print("\nTop Retrieved Source Node:")
+
+    if response.source_nodes:
+        node = response.source_nodes[0]
+
+        print(f"Document name: {node.metadata['file_name']}")
+        print(f"Similarity score: {node.score:.4f}")
+        print(f"Chunk text (first 200 characters): {node.text[:200]}")
+    else:
+        print("No source nodes retrieved.")
 
     # Print the top retrieved source node
     if response.source_nodes:
@@ -102,8 +113,6 @@ for question in questions:
 
 # Step 5: Find a Failure
 
-# Step 5: Find a Failure
-
 failure_question = (
     "Who is the current CEO of Groundwork Coffee?"
 )
@@ -119,12 +128,11 @@ print(failure_response.response)
 
 print("\nAll Retrieved Source Nodes:")
 
-for i, node in enumerate(failure_response.source_nodes, start=1):
-    print(f"\nSource {i}")
-    print(f"Document: {node.metadata['file_name']}")
+for i, node in enumerate(failure_response.source_nodes[:3], start=1):
+    print(f"\nSource {i}:")
+    print(f"Document name: {node.metadata['file_name']}")
     print(f"Similarity score: {node.score:.4f}")
-    print("Chunk preview:")
-    print(node.text[:200])
+    print(f"Chunk text (first 200 characters): {node.text[:200]}")
 
 # Reflection on the failure case:
 #
@@ -132,28 +140,31 @@ for i, node in enumerate(failure_response.source_nodes, start=1):
 # question to be difficult because the Groundwork documents do not contain
 # information about the company's current CEO.
 #
-# The retrieval system returned our_story.txt as the top result because it
-# contains information about the founders, Maya Torres and Sam Okafor.
-# However, the document does not say that either founder is the current CEO.
-# The other retrieved documents were about wholesale and catering and the
-# Barista Box, so they also did not contain information about the CEO.
+# The system retrieved three source nodes, but none of them directly answered
+# the question. The top result was our_story.txt because it contained related
+# information about Groundwork's founders, Maya Torres and Sam Okafor.
+# The other retrieved documents were also related to Groundwork but did not
+# provide information about the current CEO.
 #
-# The model then answered that Maya Torres and Sam Okafor are the founders
-# instead of answering the question about the current CEO. This means the
-# model used related information from the retrieved context but did not
-# actually answer the question. It did not clearly state that the CEO
-# information was unavailable.
+# The response showed a tone shift compared with the successful queries.
+# For the five project questions, the assistant sounded confident because the
+# retrieved documents contained information that supported the answers. In
+# this failure case, the assistant still sounded confident even though the
+# retrieved context did not contain the requested CEO information. Instead of
+# clearly stating that the information was unavailable, it provided related
+# information about the founders.
 #
-# The response also sounded confident even though the retrieved documents
-# did not support the answer. This shows that a confident AI response is not
-# necessarily a correct or well-supported response. Users should check the
-# retrieved information rather than trusting the model's tone or confidence.
+# This shows that semantic retrieval can return related information even when
+# the retrieved documents do not actually answer the question. It also shows
+# that a confident tone does not guarantee that an answer is supported by the
+# retrieved context.
 #
-# To improve the system, I would add a guardrail requiring the model to say
-# that the information is not available when the retrieved documents do not
-# directly support an answer. I would also add a similarity-score threshold
-# or another retrieval check to identify questions for which the available
-# documents do not contain sufficient information.
+# To improve the system, I would add a guardrail that requires the assistant
+# to say that the information is not available when the retrieved context does
+# not directly support an answer. I would also add a similarity-score
+# threshold or retrieval-quality check so the system can recognize when the
+# retrieved documents are not sufficiently relevant before generating a
+# response.
 
 # Step 6: Reflection
 

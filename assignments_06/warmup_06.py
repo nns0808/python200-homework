@@ -59,10 +59,10 @@ else:
 #    Find the document chunks whose embeddings are most similar to the query embedding.
 #
 # 7. Inject retrieved chunks into the prompt
-#    Add the retrieved context to the prompt sent to the language model.
+#    Add the retrieved context and the user's question to the prompt sent to the language model.
 #
 # 8. Generate a response from the LLM
-#    The language model uses the retrieved context and the user's question to produce an answer.
+#    The language model uses the user's question and retrieved context to produce an answer.
 
 # ---Keyword RAG---
 
@@ -154,16 +154,22 @@ print(result[0][0])
 print()
 
 # Keyword Question 2
-# No document was selected because there were no overlapping keywords
-# between the query and any of the documents.
+
+# Result:
+# The retrieval function selected "loyalty.txt" because the query contains
+# words such as "you" and "have" that are not included in the stopword list.
+# These words create keyword overlap even though "loyalty.txt" is not relevant
+# to the question.
 #
-# Keyword RAG did not get this right because the menu is the most relevant
-# document, but it does not contain the exact word "caffeine." Keyword
-# retrieval only matches exact words and cannot understand related concepts.
+# Keyword RAG did not get this right. The most relevant document is "menu.txt",
+# because it contains information about drinks, but the keyword retrieval
+# method cannot recognize the relationship between "caffeine" and the drinks
+# listed in the menu.
 #
-# Embedding-based (semantic) retrieval would do better because it can
-# recognize that espresso, lattes, cappuccinos, and cold brew are all
-# related to caffeine, even when the exact keyword is not present.
+# Semantic retrieval would do better because embeddings can capture the meaning
+# of the query and recognize that a question about caffeine is related to the
+# drinks described in "menu.txt", even when the exact word "caffeine" does not
+# appear in the document.
 
 # Keyword Question 3
 
@@ -222,13 +228,14 @@ print()
 
 # Semantic Question 2
 
-#  | Feature                 | Keyword RAG                    | Semantic RAG |
+# | Feature                 | Keyword RAG                    | Semantic RAG |
 # |-------------------------|--------------------------------|--------------|
 # | What is compared?       | Exact word overlap             | Meaning similarity between text embeddings |
 # | What is retrieved?      | Full document                  | Relevant text chunks |
 # | Can it handle synonyms? | No                             | Yes |
 # | Storage format          | Plain text dictionary          | Vector database with embeddings |
 # | Relevance score         | Number of overlapping keywords | Cosine similarity score between vectors |
+
 
 # ---LlamaIndex---
 
@@ -284,21 +291,28 @@ for question in questions:
         print("Chunk preview:")
         print(node.text[:150])
 
-# The retrieved chunks were mostly relevant to each question. For the employee
-# benefits question, the top result came from the benefits document, and for
-# the security question, the top result came from the security policies document.
+# LlamaIndex Question 1 - Comments
+
+# Question 1: "What employee benefits does BrightLeaf offer?"
+# The retrieved chunks were relevant to the question, with the top result
+# coming from the benefits document. The response was confident, detailed,
+# and specific, and it answered the question using information from the
+# retrieved documents.
+
+# One unexpected result was that the company overview document was also
+# retrieved, even though it was not directly about employee benefits.
 #
-# The model's responses were confident, detailed, and specific. It did not use
-# phrases such as "based on the context" or "I'm not sure." Instead, it answered
-# as though it had direct knowledge of the information in the retrieved documents.
-#
-# One unexpected result was that the company overview document was retrieved for
-# both questions, even though it was not directly about benefits or security.
-# The security document also appeared as a lower-ranked result for the benefits
-# question, showing that semantic retrieval can return related context in
-# addition to the most relevant document.
+# Question 2: "What are BrightLeaf's security policies?"
+# The retrieved chunks were mostly relevant, with the security policies
+# document appearing as the top result. The response was confident,
+# detailed, and specific, and it directly addressed the question using
+# information from the retrieved documents.
+
+# One unexpected result was that the company overview document was also
+# retrieved, even though it was not directly about security policies.
 
 # LlamaIndex Question 2
+
 # Compare the same query using similarity_top_k=1 and similarity_top_k=5
 
 question = "What employee benefits does BrightLeaf offer?"
@@ -322,6 +336,22 @@ for k in [1, 5]:
         print(f"Similarity score: {node.score:.4f}")
         print("Chunk preview:")
         print(node.text[:150])
+
+# LlamaIndex Question 2 - Comments
+
+# With similarity_top_k=1, the system used only the single most relevant
+# chunk to answer the question. The response was focused on the employee
+# benefits information from the top-ranked result.
+
+# With similarity_top_k=5, the system retrieved more context from multiple
+# chunks. The response could include more complete information, but some of
+# the additional retrieved chunks were less directly relevant to the
+# question.
+
+# More retrieved context is not always better. Increasing similarity_top_k
+# can provide additional useful information, but it can also introduce
+# unrelated or less relevant content. The best value depends on the query
+# and the quality of the retrieved chunks.
 
 # LlamaIndex Question 3
 
@@ -363,12 +393,12 @@ from llama_index.core.evaluation import FaithfulnessEvaluator, RelevancyEvaluato
 # Use gpt-4o-mini as the evaluator/judge LLM
 judge_llm = OpenAI(model="gpt-4o-mini")
 
-# Create evaluators
+# Create the evaluation tools
 faithfulness_evaluator = FaithfulnessEvaluator(llm=judge_llm)
 relevancy_evaluator = RelevancyEvaluator(llm=judge_llm)
 
 # --------------------------------------------------
-# Q4 - Evaluation Run 1: Requested BrightLeaf query
+# Q4 - Evaluation Run 1: Required query
 # --------------------------------------------------
 
 q1 = "What employee benefits does BrightLeaf offer?"
@@ -388,7 +418,7 @@ relevancy_result1 = relevancy_evaluator.evaluate_response(
 
 print("\n" + "=" * 60)
 print("LlamaIndex Question 4 - Evaluation Run 1")
-print("Requested BrightLeaf Query")
+print("Required Query")
 print("Question:")
 print(q1)
 
@@ -399,7 +429,7 @@ print("\nFaithfulness score:", faithfulness_result1.score)
 print("Relevancy score:", relevancy_result1.score)
 
 # --------------------------------------------------
-# Q4 - Evaluation Run 2: Lower-quality/out-of-context query
+# Q4 - Evaluation Run 2: Lower-quality query
 # --------------------------------------------------
 
 q2 = "What is the population of France?"
@@ -428,30 +458,41 @@ print(response2.response)
 print("\nFaithfulness score:", faithfulness_result2.score)
 print("Relevancy score:", relevancy_result2.score)
 
-# Evaluation Comments:
+# --------------------------------------------------
+# Evaluation Comments
+# --------------------------------------------------
+
+# 1. What does each metric measure?
 #
 # Faithfulness measures whether the response is supported by the retrieved
-# context and does not contain unsupported claims. A score of 1.0 indicates
-# that the response is fully supported, while a score of 0.0 indicates that
-# the response is not supported by the retrieved context.
+# context and does not contain unsupported claims. A score of 1.0 means the
+# response is fully supported by the retrieved context, while a score of 0.0
+# means the response is not supported by the retrieved context.
+
+# Relevancy measures whether the response directly addresses the user's
+# question. A high relevancy score means the response is focused on answering
+# the query, while a low score means the response does not adequately answer
+# the question.
+
+# 2. What were the results for the required query?
 #
-# Relevancy measures how well the response addresses the user's question.
-# Faithfulness checks whether the answer is grounded in the retrieved
-# information, while relevancy checks whether it actually answers the question.
+# For the BrightLeaf employee benefits question, the response received
+# Faithfulness = 1.0 and Relevancy = 1.0. The answer was supported by the
+# retrieved BrightLeaf context and directly addressed the question.
+
+# 3. What happened with the lower-quality query?
 #
-# Evaluation Run 1, using the BrightLeaf benefits question, received
-# Faithfulness = 1.0 and Relevancy = 1.0. The response was supported by the
-# BrightLeaf documents and directly answered the question.
+# For the population of France question, the response received
+# Faithfulness = 0.0 and Relevancy = 0.0. The BrightLeaf documents did not
+# contain information about the population of France, so the response could
+# not be supported by the retrieved context or adequately answer the question.
+
+# 4. What is LLM-as-a-judge and why is it useful?
 #
-# Evaluation Run 2, using the out-of-context population-of-France question,
-# received Faithfulness = 0.0 and Relevancy = 0.0. The requested information
-# was not contained in the BrightLeaf documents, so the response could not be
-# supported by the retrieved context or directly answered using the available
-# information. The system appropriately avoided hallucinating an answer.
-#
-# "LLM-as-a-judge" means using another language model to evaluate the quality
+# LLM-as-a-judge means using another language model to evaluate the quality
 # of an LLM-generated response. It is useful for RAG evaluation because
-# qualities such as faithfulness and relevancy are difficult to measure with
-# simple exact-match accuracy. An LLM judge can evaluate whether a response
-# is supported by the retrieved context and whether it meaningfully addresses
-# the user's question, even when its wording differs from a reference answer.
+# faithfulness and relevancy are difficult to measure with simple
+# exact-match accuracy. An LLM judge can evaluate whether a response is
+# supported by the retrieved context and whether it meaningfully addresses
+# the user's question.
+
