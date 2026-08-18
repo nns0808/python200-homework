@@ -51,9 +51,10 @@ def load_happiness_data() -> dict:
         df = pd.concat(dataframes, ignore_index=True)
 
     return {
-        "shape": df.shape,
-        "columns": df.columns.tolist()
-    }
+    "shape": df.shape,
+    "columns": df.columns.tolist(),
+    
+}
 
 # Tool 2: summarize_column
 @tool
@@ -194,23 +195,9 @@ model = OpenAIServerModel(api_key=api_key, model_id="gpt-4o-mini")
 
 SYSTEM_PROMPT = """
 You are a data analyst assistant for the World Happiness dataset.
-
-Use the available tools for loading data, summarizing columns, computing
-correlations, and ranking countries.
-
-The load_happiness_data tool returns dataset metadata (shape and columns).
-When a custom analysis or plot requires the actual rows, read the actual
-dataset from:
-assignments_01/outputs/merged_happiness.csv
-
-Write Python code directly when the tools are not sufficient, especially
-for custom plots using matplotlib.
-
-For plots, always use the actual World Happiness data. Never create,
-invent, or use mock data.
-
-Save any plots to assignments_07/outputs/.
-
+Use the available tools for loading data, summarizing columns, computing correlations,
+and ranking countries. Write Python code directly only when the tools are not sufficient
+(for example, when creating custom plots or computing something the tools don't cover).
 Be concise and student-friendly in your responses.
 """
 
@@ -218,15 +205,15 @@ agent = CodeAgent(
     tools=[load_happiness_data, summarize_column, compute_correlation, get_top_n_countries],
     model=model,
     instructions=SYSTEM_PROMPT,
-    additional_authorized_imports=["pandas", "matplotlib", "matplotlib.pyplot", "scipy.stats"],
-    max_steps=12,
+    additional_authorized_imports=["pandas", "matplotlib.pyplot", "scipy.stats"],
+    max_steps=8,
 )
 
-# ----Task 3: Run Guided Queries----
+# ----Task 3: Run the Five Guided Queries----
 
 if __name__ == "__main__":
 
-    queries = [
+    guided_queries = [
         "Load the happiness data and tell me its shape and column names.",
         "Summarize the happiness_score column.",
         "What is the correlation between gdp_per_capita and happiness_score? Is it statistically significant?",
@@ -234,32 +221,36 @@ if __name__ == "__main__":
         "Plot happiness_score over the years as a line chart, with one line per region. Save the plot to outputs/happiness_by_region.png.",
     ]
 
-    for query in queries:
-        print(f"\n--- Query: {query} ---")
+    # Run the five required guided queries in sequence.
+    for query in guided_queries:
+        print(f"\n--- Guided Query: {query} ---")
         response = agent.run(query, reset=False)
         print(response)
 
-# ----Task 4: Your Own Questions----
 
-    # My query 1
+# ----Task 4: Run Two Additional Custom Queries----
+
+    # Custom Query 1
     my_query_1 = (
         "What is the correlation between healthy_life_expectancy "
         "and happiness_score? Is it statistically significant?"
     )
+
     print(f"\n--- Custom Query 1: {my_query_1} ---")
     response_1 = agent.run(my_query_1, reset=False)
     print(response_1)
 
-    # Comment: This triggered tool use only. The agent used compute_correlation
+    # Reflection: This query used the compute_correlation tool
     # to calculate the Pearson correlation and p-value.
 
-    # My query 2
+    # Custom Query 2
     my_query_2 = "Show me the top 5 happiest countries in 2024."
+
     print(f"\n--- Custom Query 2: {my_query_2} ---")
     response_2 = agent.run(my_query_2, reset=False)
     print(response_2)
 
-    # Comment: This triggered tool use only. The agent used get_top_n_countries
+    # Reflection: This query used the get_top_n_countries tool
     # to retrieve the top 5 countries for 2024.
 
 

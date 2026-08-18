@@ -41,36 +41,49 @@ print(celsius_to_fahrenheit(0))
 print(celsius_to_fahrenheit(100))
 print(celsius_to_fahrenheit(-40))
 
-#  Q2
+# Q2
+
+from datetime import datetime
+
+
+def get_current_time() -> str:
+    '''Return the current local time as a formatted string.'''
+    return datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+
+get_current_time()
 
 
 tools = [
     {
-        "type": "function",
-        "function": {
-            "name": "get_current_time",
-            "description": "Return the current local time as a formatted string.",
-            "parameters": {
-                "type": "object",
-                "properties": {},
-                "required": []
-            }
-        }
+        'type': 'function',
+        'function': {
+            'name': 'get_current_time',
+            'description': 'Returns the current local time as a string.',
+            'parameters': {
+                'type': 'object',
+                'properties': {},
+                'required': [],
+            },
+        },
     }
 ]
+
+print('Tools list defined with one tool: get_current_time')
+
+
 def run_agent(user_prompt: str) -> str:
     '''Run a minimal ReAct-style agent for a single user prompt.'''
 
     SYSTEM_PROMPT = '''You are a simple assistant that can tell the current time.
-                     Use the tool get_current_time whenever a user asks about the time.'''
-    
-    # Step 1: start the conversation with system and user messages
+Use the tool get_current_time whenever a user asks about the time.'''
+
     messages = [
         {'role': 'system', 'content': SYSTEM_PROMPT},
         {'role': 'user', 'content': user_prompt},
     ]
 
-    # Step 2: first API call - the model decides whether to call a tool
+    # Step 1: first API call - the model decides whether to call a tool
     first_response = client.chat.completions.create(
         model='gpt-4.1-mini',
         messages=messages,
@@ -80,9 +93,9 @@ def run_agent(user_prompt: str) -> str:
 
     print("First response received from model...")
     print(first_response)
+
     first_message = first_response.choices[0].message
 
-    # Record what the model said so far
     messages.append(
         {
             'role': 'assistant',
@@ -91,9 +104,10 @@ def run_agent(user_prompt: str) -> str:
         }
     )
 
-    # Step 3: check if the model requested any tools
+    # Step 2: check if the model requested any tools
     if first_message.tool_calls:
         print("Agentic mode engaged...")
+
         for tool_call in first_message.tool_calls:
             function_name = tool_call.function.name
 
@@ -114,7 +128,7 @@ def run_agent(user_prompt: str) -> str:
                 }
             )
 
-        # Step 4: second API call
+        # Step 3: second API call
         second_response = client.chat.completions.create(
             model='gpt-4.1-mini',
             messages=messages,
@@ -125,16 +139,26 @@ def run_agent(user_prompt: str) -> str:
 
         final_message = second_response.choices[0].message
         return final_message.content or ''
+
     else:
         print("No tools needed....")
 
     return first_message.content or ''
 
-# Q2 Prediction:
-# 1. No tool call will be triggered because the only available
-#    tool is get_current_time, which cannot convert Celsius to Fahrenheit.
-# 2. One API call will be made because the model can answer the
-#    conversion directly without using a tool.
+
+# Prediction
+#
+# 1. Will calling run_agent("Convert 100 degrees Celsius to Fahrenheit")
+#    trigger a tool call?
+#
+#    Prediction: No. The only available tool is get_current_time,
+#    and converting Celsius to Fahrenheit does not require the
+#    current time.
+#
+# 2. How many API calls will be made to answer this query?
+#
+#    Prediction: One API call. Since no tool call should be needed,
+#    the agent should return the answer after the first API call.
 
 result = run_agent("Convert 100 degrees Celsius to Fahrenheit")
 print("Final result:", result)
@@ -165,7 +189,7 @@ tools = [
 ]
 
 
-def run_agent_q3(user_prompt: str) -> str:
+def run_agent(user_prompt: str) -> str:
     """Run the agent with both get_current_time and celsius_to_fahrenheit tools."""
 
     SYSTEM_PROMPT = """You are a helpful assistant that can tell the current time
@@ -248,12 +272,12 @@ def run_agent_q3(user_prompt: str) -> str:
     return first_message.content or ""
 
 
-response_a = run_agent_q3("What is 37 degrees Celsius in Fahrenheit?")
+response_a = run_agent("What is 37 degrees Celsius in Fahrenheit?")
 print("Response A:", response_a)
 # A tool was called because celsius_to_fahrenheit is available and
 # the question specifically asks for a Celsius-to-Fahrenheit conversion.
 
-response_b = run_agent_q3("What is the boiling point of water in plain English?")
+response_b = run_agent("What is the boiling point of water in plain English?")
 print("Response B:", response_b)
 # No tool was called because the question can be answered directly
 # without either available tool.
@@ -692,118 +716,11 @@ node_tools = {
 # Run agent cycle
 
 
-def run_agent_cycle(user_prompt: str, max_tool_rounds: int = 5) -> str:
-    """
-    Run a multi-tool agent cycle.
-    """
-
-    system_prompt = """
-    You are a helpful CSV data analysis assistant.
-
-    You can use tools to:
-    - list CSV files
-    - load a CSV
-    - inspect columns
-    - summarize columns
-    - describe columns
-    - create plots
-    - compute Pearson correlations
-
-    Use the available tools when they are needed to answer the user's question.
-    """
-
-    messages = [
-        {
-            "role": "system",
-            "content": system_prompt
-        },
-        {
-            "role": "user",
-            "content": user_prompt
-        }
-    ]
-
-    for round_number in range(max_tool_rounds):
-
-        print(f"\n--- Tool round {round_number + 1} ---")
-
-        response = client.chat.completions.create(
-            model="gpt-4.1-mini",
-            messages=messages,
-            tools=tools_schema,
-            tool_choice="auto",
-        )
-
-        message = response.choices[0].message
-
-        messages.append(
-            {
-                "role": "assistant",
-                "content": message.content,
-                "tool_calls": message.tool_calls,
-            }
-        )
-
-        if not message.tool_calls:
-            return message.content or ""
-
-        for tool_call in message.tool_calls:
-
-            function_name = tool_call.function.name
-            arguments = json.loads(tool_call.function.arguments)
-
-            print("Tool called:", function_name)
-            print("Arguments:", arguments)
-
-            if function_name not in node_tools:
-                tool_result = {
-                    "error": f"Unknown tool: {function_name}"
-                }
-            else:
-                try:
-                    tool_result = node_tools[function_name](**arguments)
-                except Exception as e:
-                    tool_result = {
-                        "error": str(e)
-                    }
-
-            print("Tool result:", tool_result)
-
-            messages.append(
-                {
-                    "role": "tool",
-                    "tool_call_id": tool_call.id,
-                    "name": function_name,
-                    "content": json.dumps(tool_result),
-                }
-            )
-
-    return (
-        "The agent reached the maximum number of tool rounds "
-        "without completing the request."
-    )
-
-
-
-# Q4 test
-
-
-response = run_agent_cycle(
-    "Load the bike_commute CSV and compute the correlation "
-    "between distance and time."
-)
-
-print("\nQ4 Response:")
-print(response)
-
-# Q5
-
-
 def run_agent_cycle(messages, user_text, max_tool_rounds=5):
     """
     Run through one react-agent loop using a simple tool-using agent.
     """
-    
+
     messages.append({"role": "user", "content": user_text})
 
     def observe_tool_result(tool_call_id, result):
@@ -813,13 +730,11 @@ def run_agent_cycle(messages, user_text, max_tool_rounds=5):
             else result
         )
 
-        tool_message = {
+        return {
             "role": "tool",
             "tool_call_id": tool_call_id,
             "content": content,
         }
-
-        return tool_message
 
     for loop_idx in range(max_tool_rounds):
 
@@ -868,10 +783,6 @@ def run_agent_cycle(messages, user_text, max_tool_rounds=5):
                         else fn()
                     )
                 except Exception as e:
-                    print(
-                        f"Tool error in {name}: "
-                        f"{type(e).__name__}: {e}"
-                    )
                     result = {
                         "error": (
                             f"Tool '{name}' failed: "
@@ -889,7 +800,8 @@ def run_agent_cycle(messages, user_text, max_tool_rounds=5):
     return "I hit the tool-round limit. Try a simpler request."
 
 
-# Q5 system prompt
+
+# Q4 test
 
 SYSTEM_PROMPT = """
 You are a helpful CSV data analysis assistant.
@@ -906,6 +818,35 @@ You can use tools to:
 Use the available tools when they are needed to answer the user's question.
 """
 
+messages = [
+    {"role": "system", "content": SYSTEM_PROMPT}
+]
+
+response = run_agent_cycle(
+    messages,
+    "Load the bike_commute CSV and compute the correlation "
+    "between distance_km and duration_min."
+)
+
+print("\nQ4 Response:")
+print(response)
+
+# Q5
+
+SYSTEM_PROMPT = """
+You are a helpful CSV data analysis assistant.
+
+You can use tools to:
+- list CSV files
+- load a CSV
+- inspect columns
+- summarize columns
+- describe columns
+- create plots
+- compute Pearson correlations
+
+Use the available tools when they are needed to answer the user's question.
+"""
 
 messages = [
     {"role": "system", "content": SYSTEM_PROMPT}
@@ -943,7 +884,7 @@ def compute_correlation(col1: str, col2: str) -> dict:
         col1: Name of the first column.
         col2: Name of the second column.
     """
-    return csv_backend.compute_correlation(col1, col2)
+    return csv_manager.compute_correlation(col1, col2)
 
 
 print(compute_correlation.description)
@@ -1083,30 +1024,26 @@ print("CodeAgent response:")
 print(response_code)
 
 # Comparison:
-# The ToolCallingAgent loaded the CSV and called the plot_data tool to create
-# the scatter plot. It did not actually change the dot color because the
-# plot_data tool does not have a color parameter.
 #
-# The CodeAgent also loaded the CSV and called plot_data to create the scatter
-# plot. It recognized that plot_data does not support a color argument, so it
-# also did not actually change the dot color to green.
+# ToolCallingAgent:
+# The ToolCallingAgent loaded the CSV and called the plot_data tool
+# to create the requested scatter plot. However, it did NOT actually
+# change the dots to green because plot_data does not provide a color
+# parameter. The agent's final response incorrectly stated that the
+# plot had been created with green dots.
 #
-# This shows that a ToolCallingAgent is useful when the available tools already
-# provide the exact operations needed. A CodeAgent is more flexible because it
-# can generate and execute Python code, which is useful for more complex or
-# customized data analysis. However, the CodeAgent still depends on the tools
-# and environment available to it, so it cannot automatically change a plot
-# color when the provided plotting tool does not expose that option.
-
-# Q9
+# CodeAgent:
+# The CodeAgent loaded the CSV and created the scatter plot using
+# plot_data. It recognized that the user requested green dots and
+# attempted to pass color="green" to plot_data, but this failed because
+# plot_data does not accept a color argument. It then attempted to use
+# matplotlib directly, but that import was blocked by the CodeAgent's
+# authorized-import restrictions. Therefore, the CodeAgent also did
+# NOT actually create green dots.
 #
-# 1. A ToolCallingAgent would be a better choice for a task such as loading a
-# CSV file and calculating a correlation using a predefined tool. This is a
-# good fit because the task has a clear, limited set of operations, and the
-# agent only needs to select and call the appropriate tool rather than
-# generate new code.
-#
-# 2. One meaningful risk of using a CodeAgent is that it generates and
-# executes code dynamically. The generated code could contain an error or
-# perform an unintended operation, whereas a ToolCallingAgent is limited to
-# calling the specific tools that the developer has provided.
+# Overall:
+# Neither agent actually changed the dots to green. The ToolCallingAgent
+# was limited to the parameters exposed by the available tools. The
+# CodeAgent was more flexible because it could generate Python code and
+# attempted to customize the plot, but the environment prevented the
+# direct matplotlib approach.
