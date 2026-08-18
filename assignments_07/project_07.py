@@ -209,11 +209,11 @@ agent = CodeAgent(
     max_steps=8,
 )
 
-# ----Task 3: Run the Five Guided Queries----
+# ----Task 3: Run Guided Queries----
 
 if __name__ == "__main__":
 
-    guided_queries = [
+    queries = [
         "Load the happiness data and tell me its shape and column names.",
         "Summarize the happiness_score column.",
         "What is the correlation between gdp_per_capita and happiness_score? Is it statistically significant?",
@@ -221,37 +221,36 @@ if __name__ == "__main__":
         "Plot happiness_score over the years as a line chart, with one line per region. Save the plot to outputs/happiness_by_region.png.",
     ]
 
-    # Run the five required guided queries in sequence.
-    for query in guided_queries:
-        print(f"\n--- Guided Query: {query} ---")
+    for query in queries:
+        print(f"\n--- Query: {query} ---")
         response = agent.run(query, reset=False)
         print(response)
 
+    plot_path = Path("outputs/happiness_by_region.png")
 
-# ----Task 4: Run Two Additional Custom Queries----
+    if plot_path.exists():
+        print(f"Verified: {plot_path} was created successfully.")
+    else:
+        print(f"ERROR: {plot_path} was not created.")
 
-    # Custom Query 1
+    # ----Task 4: Your Own Questions----
+
+    # My query 1
     my_query_1 = (
         "What is the correlation between healthy_life_expectancy "
         "and happiness_score? Is it statistically significant?"
     )
-
-    print(f"\n--- Custom Query 1: {my_query_1} ---")
     response_1 = agent.run(my_query_1, reset=False)
     print(response_1)
 
-    # Reflection: This query used the compute_correlation tool
-    # to calculate the Pearson correlation and p-value.
+    # Comment: This query triggered the compute_correlation tool.
 
-    # Custom Query 2
+    # My query 2
     my_query_2 = "Show me the top 5 happiest countries in 2024."
-
-    print(f"\n--- Custom Query 2: {my_query_2} ---")
     response_2 = agent.run(my_query_2, reset=False)
     print(response_2)
 
-    # Reflection: This query used the get_top_n_countries tool
-    # to retrieve the top 5 countries for 2024.
+    # Comment: This query triggered the get_top_n_countries tool.
 
 
 # --- Task 5: Reflection ---

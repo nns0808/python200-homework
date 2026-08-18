@@ -1043,7 +1043,30 @@ print(response_code)
 #
 # Overall:
 # Neither agent actually changed the dots to green. The ToolCallingAgent
-# was limited to the parameters exposed by the available tools. The
-# CodeAgent was more flexible because it could generate Python code and
-# attempted to customize the plot, but the environment prevented the
-# direct matplotlib approach.
+# was limited to the parameters exposed by the available tools, so it
+# is most useful when the task can be completed using well-defined,
+# predefined tools.
+#
+# The CodeAgent was more flexible because it can generate and execute
+# Python code, making it more useful for tasks that require custom
+# calculations, transformations, or actions that are not directly
+# supported by predefined tools. In this example, however, the
+# CodeAgent was also limited by the environment's authorized-import
+# restrictions.
+
+# Q9
+#
+# 1. A ToolCallingAgent would be a better choice for a task where the
+# available actions are well-defined and can be handled by a set of
+# predefined tools. For example, answering questions about a CSV file
+# using tools such as load_csv, get_columns, and compute_correlation
+# would be a good fit. The task is well suited to a tool-based approach
+# because the agent only needs to select and use specific tools rather
+# than generate new Python code.
+#
+# 2. A meaningful risk of using a CodeAgent is that it generates and
+# executes Python code, which can perform actions beyond the specific
+# predefined tools. This creates a greater risk of unintended code
+# execution or unexpected changes to data or files. A ToolCallingAgent
+# is more constrained because it can only call the tools that have been
+# explicitly provided to it.
