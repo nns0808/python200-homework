@@ -34,7 +34,7 @@ def load_happiness_data() -> dict:
         df = pd.read_csv(data_path)
     else:
         resources_path = Path(
-            "assignments_01/resources/happiness_project"
+            "assignments/resources/happiness_project"
         )
 
         yearly_files = sorted(resources_path.glob("*.csv"))
@@ -208,6 +208,9 @@ agent = CodeAgent(
 
 if __name__ == "__main__":
 
+    outputs_dir = Path("outputs")
+    outputs_dir.mkdir(parents=True, exist_ok=True)
+
     queries = [
         "Load the happiness data and tell me its shape and column names.",
         "Summarize the happiness_score column.",
@@ -238,14 +241,20 @@ if __name__ == "__main__":
     response_1 = agent.run(my_query_1, reset=False)
     print(response_1)
 
-    # Comment: This query triggered the compute_correlation tool.
+    # This query triggered the compute_correlation tool.
+    # The agent did not need to generate custom Python code because
+    # the existing tool directly calculates the Pearson correlation
+    # and p-value. Therefore, this was tool use only.
 
     # My query 2
     my_query_2 = "Show me the top 5 happiest countries in 2024."
     response_2 = agent.run(my_query_2, reset=False)
     print(response_2)
 
-    # Comment: This query triggered the get_top_n_countries tool.
+    # This query triggered the get_top_n_countries tool.
+    # The agent did not need to generate custom Python code because
+    # the existing tool directly filters the requested year and
+    # returns the top 5 countries. Therefore, this was tool use only.
 
 
 # --- Task 5: Reflection ---
