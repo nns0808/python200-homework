@@ -34,7 +34,7 @@ def load_happiness_data() -> dict:
         df = pd.read_csv(data_path)
     else:
         resources_path = Path(
-            "assignments/resources/happiness_project"
+            "assignments_01/resources/happiness_project"
         )
 
         yearly_files = sorted(resources_path.glob("*.csv"))
@@ -131,9 +131,8 @@ def get_top_n_countries(column: str, year: int, n: int = 5) -> dict:
         n: The number of top countries to return. Defaults to 5.
 
     Returns:
-        A dictionary containing the year, ranking column, and a list of
-        the top countries with their corresponding values, or an error
-        message for invalid input.
+        A list of dictionaries containing each country and its value
+        for the requested column, or an error message for invalid input.
     """
     if df is None:
         return {
@@ -176,12 +175,8 @@ def get_top_n_countries(column: str, year: int, n: int = 5) -> dict:
 
     results = top_n[["country", column]].to_dict(orient="records")
 
-    return {
-        "year": year,
-        "column": column,
-        "results": results
-    }
-
+    return results
+    
 # ----Task 2: Build the Agent----
 
 load_dotenv()
