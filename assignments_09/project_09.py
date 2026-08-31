@@ -1,4 +1,4 @@
-# https://youtu.be/ovyUQEX7byk
+# video link: https://youtu.be/ovyUQEX7byk
 
 # ---Step 1: Extract---
 
@@ -175,21 +175,30 @@ if target_response.data:
     print(f"\nWeather row for {target_date}:")
     print(target_response.data[0])
 else:
-    # If 2023-07-04 is missing, find the nearest date.
+    # If 2023-07-04 is missing, find the nearest available date.
     nearest_response = (
         supabase
         .table("weather_raw")
         .select("*")
         .gte("date", "2023-07-01")
         .lte("date", "2023-07-07")
-        .order("date", desc=False)
-        .limit(1)
         .execute()
     )
 
     if nearest_response.data:
-        print("\n2023-07-04 was not found.")
+        from datetime import date
+
+        target = date.fromisoformat(target_date)
+
+        nearest_row = min(
+            nearest_response.data,
+            key=lambda row: abs(
+                date.fromisoformat(row["date"]) - target
+            )
+        )
+
+        print(f"\n{target_date} was not found.")
         print("Nearest available row:")
-        print(nearest_response.data[0])
+        print(nearest_row)
     else:
         print("\nNo nearby date was found.")

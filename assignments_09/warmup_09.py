@@ -48,7 +48,7 @@ def get_client():
 # healthcare application, RLS could ensure that users can only access
 # the data they are authorized to see.
 
-# ---supabase-py CRUD---
+# ---supabase CRUD---
 
 # CRUD Question 1
 
@@ -67,16 +67,24 @@ def insert_test_record(supabase):
     response = supabase.table("weather_raw").insert(record).execute()
     print(response.data)
 
-supabase = get_client()
-# insert_test_record(supabase)
+    return record["date"]
 
-# It works. 
+
+supabase = get_client()
+
+# Run the insert test
+
+test_date = insert_test_record(supabase)
+
+# It works.
 # If I ran the function twice, the second insert would fail because
 # date is the primary key and duplicate dates are not allowed.
 # To make it safe to run multiple times, I could use upsert()
 # instead of insert(), which updates the row if the date already exists.
 
+
 # CRUD Question 2
+
 def get_records_by_date_range(supabase, start, end):
     response = (
         supabase.table("weather_raw")
@@ -84,14 +92,16 @@ def get_records_by_date_range(supabase, start, end):
         .gte("date", start)
         .lte("date", end)
         .execute()
-
     )
+
     return response.data
 
+
+# Test with a date range that includes the row inserted in Q1
 records = get_records_by_date_range(
     supabase,
-    "2026-08-26",
-    "2026-08-28"
+    test_date,
+    test_date
 )
 
 print(records)
@@ -111,6 +121,17 @@ print(records)
 # I would use upsert when the same data might be loaded more than once.
 # For example, when updating weather data for a date that may already
 # exist in the weather_raw table.
+
+
+def safe_upsert(supabase, records):
+    response = (
+        supabase
+        .table("weather_raw")
+        .upsert(records, on_conflict="date")
+        .execute()
+    )
+
+    print(f"Rows affected: {len(response.data)}")
 
 # ---Idempotency---
 
