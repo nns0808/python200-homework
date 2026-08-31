@@ -131,7 +131,19 @@ def safe_upsert(supabase, records):
         .execute()
     )
 
+    
     print(f"Rows affected: {len(response.data)}")
+
+# Test safe_upsert
+test_record = {
+    "date": test_date,
+    "temperature_2m_max": 12.3,
+    "temperature_2m_min": 4.1,
+    "precipitation_sum": 0.0,
+    "wind_speed_10m_max": 18.5,
+}
+
+safe_upsert(supabase, [test_record])
 
 # ---Idempotency---
 

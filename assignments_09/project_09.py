@@ -197,8 +197,9 @@ else:
             )
         )
 
-        print(f"\n{target_date} was not found.")
-        print("Nearest available row:")
+        print(f"\nTarget date {target_date} was not found.")
+        print("Using the nearest available date for verification:")
         print(nearest_row)
     else:
-        print("\nNo nearby date was found.")
+        print(f"\nTarget date {target_date} was not found.")
+        print("No nearby date was found.")
