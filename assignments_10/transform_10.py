@@ -31,6 +31,37 @@ with open(METADATA_PATH, "r") as f:
 print("Model metadata loaded successfully.")
 
 
+# Check that required feature columns are present in weather_raw
+feature_columns = model_metadata["feature_names"]
+
+try:
+    raw_check = (
+        supabase
+        .table("weather_raw")
+        .select("*")
+        .limit(1)
+        .execute()
+    )
+
+    if raw_check.data:
+        missing_features = [
+            col for col in feature_columns
+            if col not in raw_check.data[0]
+        ]
+
+        if missing_features:
+            raise RuntimeError(
+                f"weather_raw is missing required feature columns: {missing_features}"
+            )
+
+    print("weather_raw table and required feature columns verified.")
+
+except Exception as e:
+    raise RuntimeError(
+        f"Could not verify weather_raw prerequisites: {e}"
+    )
+
+
 # Fetch all raw weather records
 
 raw_response = (
@@ -44,6 +75,16 @@ raw_records = raw_response.data
 
 print(f"Raw records fetched: {len(raw_records)}")
 
+
+# Check that weather_enriched exists
+try:
+    supabase.table("weather_enriched").select("date").limit(1).execute()
+    print("weather_enriched table verified.")
+except Exception as e:
+    raise RuntimeError(
+        "Required table 'weather_enriched' does not exist "
+        "or cannot be accessed. Create it before running transform_10.py."
+    ) from e
 
 # Fetch dates already present in weather_enriched
 
@@ -97,8 +138,8 @@ else:
 
     # Get feature columns from metadata
 
-    feature_columns = model_metadata["feature_names"]
-    print(f"Feature columns: {feature_columns}")
+    feature_names = model_metadata["feature_names"]
+    print(f"Feature names: {feature_names}")
 
     # Build DataFrame from unprocessed records
 
@@ -106,7 +147,7 @@ else:
 
     # Select features in the exact order specified by metadata
 
-    X = df[feature_columns]
+    X = df[feature_names]
 
 
     # Run predictions
